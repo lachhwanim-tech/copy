@@ -91,6 +91,7 @@ async function sendDataToGoogleSheet(data) {
     let locoNo = getVal(data.trainDetails, ['Loco No', 'Loco Number', 'Loco']);
     let section = getVal(data.trainDetails, ['Section']) || getVal(data.trainDetails, ['Route']);
     let rakeType = getVal(data.trainDetails, ['Type of Rake', 'Rake Type', 'Rake']);
+    let trainLoad = getVal(data.trainDetails, ['Train Load', 'Load']);
     let mps = getVal(data.trainDetails, ['Max Permissible', 'MPS', 'Max Speed']);
     
     // Fallback for Train/Loco if they are somehow empty but present in header
@@ -150,6 +151,7 @@ async function sendDataToGoogleSheet(data) {
         journeyDate: journeyDate,
         trainNo: trainNo, // Should now be found due to cleaner regex
         locoNo: locoNo,   // Should now be found
+        trainLoad: trainLoad,
         fromStn: fromStn,
         toStn: toStn,
         rakeType: rakeType,
