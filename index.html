@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANKET - SPM Analysis Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="googleApiHandler.js"></script>
+    <script src="RTIS.js"></script>
+    <script src="googlesheet.js"></script> 
+
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --text-light: #ecf0f1;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: var(--shadow); }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .header h1 { margin: 0; color: var(--primary-color); }
+        .header p { color: #7f8c8d; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: var(--secondary-color); }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 5px; font-size: 14px; }
+        
+        .full-width { grid-column: span 2; }
+        
+        .btn-primary { 
+            background: var(--accent-color); color: white; border: none; padding: 15px 30px; 
+            font-size: 16px; border-radius: 5px; cursor: pointer; width: 100%; transition: 0.3s;
+        }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-primary:disabled { background: #95a5a6; cursor: not-allowed; }
+
+        .file-upload { border: 2px dashed #bdc3c7; padding: 20px; text-align: center; border-radius: 5px; background: #f9f9f9; }
+        
+        /* Loading Overlay */
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--accent-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>SANKET</h1>
+        <p>SPM Analysis and Navigation KPA Extraction Tool</p>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label>Train No</label>
+            <input type="text" id="trainNo" placeholder="e.g. 12810" onblur="checkDuplicateEntry()">
+        </div>
+        <div class="form-group">
+            <label>Journey Date</label>
+            <input type="date" id="journeyDate">
+        </div>
+        
+        <div class="form-group">
+            <label>Loco No</label>
+            <input type="text" id="locoNo" placeholder="e.g. 30201">
+        </div>
+        <div class="form-group">
+            <label>CLI Name</label>
+            <input type="text" id="cliName" placeholder="Enter CLI Name">
+        </div>
+
+        <div class="form-group">
+            <label>From Station</label>
+            <input type="text" id="fromStn">
+        </div>
+        <div class="form-group">
+            <label>To Station</label>
+            <input type="text" id="toStn">
+        </div>
+
+        <div class="form-group">
+            <label>LP ID</label>
+            <input type="text" id="lpId">
+        </div>
+        <div class="form-group">
+            <label>LP Name</label>
+            <input type="text" id="lpName">
+        </div>
+        
+        <div class="form-group">
+            <label>ALP ID</label>
+            <input type="text" id="alpId">
+        </div>
+        <div class="form-group">
+            <label>ALP Name</label>
+            <input type="text" id="alpName">
+        </div>
+
+        <div class="form-group">
+            <label>Rake Type</label>
+            <select id="rakeType">
+                <option value="GOODS">GOODS (Freight)</option>
+                <option value="COACHING">COACHING (Passenger)</option>
+                <option value="MEMU">MEMU</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Train Load</label>
+            <select id="trainLoad">
+                <option value="LOAD">LOADED</option>
+                <option value="EMPTY">EMPTY</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>MPS (Max Speed)</label>
+            <input type="number" id="mps" value="110">
+        </div>
+        <div class="form-group">
+            <label>Section</label>
+            <input type="text" id="section" value="NGP-BSP">
+        </div>
+
+        <div class="form-group full-width file-upload">
+            <label>Upload SPM/RTIS File (.csv, .xlsx)</label>
+            <input type="file" id="spmFile" accept=".csv, .xlsx">
+        </div>
+        
+        <div class="form-group full-width file-upload">
+            <label>Upload Crew Voice/CUG Data (Optional)</label>
+            <input type="file" id="cugFile" accept=".csv, .xlsx">
+        </div>
+
+        <button class="btn-primary full-width" id="analyzeBtn" onclick="startAnalysis()">Analyze Data</button>
+    </div>
+</div>
+
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <h3 id="loadingText">Processing Data...</h3>
+</div>
+
+<script>
+    // Placeholder for Duplicate Check - Logic will be in googlesheet.js
+    async function checkDuplicateEntry() {
+        const trainNo = document.getElementById('trainNo').value;
+        const jDate = document.getElementById('journeyDate').value;
+        if(trainNo && jDate && window.checkForDuplicateInBank) {
+            await window.checkForDuplicateInBank(trainNo, jDate);
+        }
+    }
+
+    async function startAnalysis() {
+        // Validation
+        const fileInput = document.getElementById('spmFile');
+        if (!fileInput.files.length) {
+            alert("Please upload an SPM/RTIS file.");
+            return;
+        }
+
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        
+        // 1. Gather Inputs
+        const inputs = {
+            trainNo: document.getElementById('trainNo').value,
+            locoNo: document.getElementById('locoNo').value,
+            journeyDate: document.getElementById('journeyDate').value,
+            cliName: document.getElementById('cliName').value,
+            fromStn: document.getElementById('fromStn').value,
+            toStn: document.getElementById('toStn').value,
+            lpId: document.getElementById('lpId').value,
+            lpName: document.getElementById('lpName').value,
+            alpId: document.getElementById('alpId').value,
+            alpName: document.getElementById('alpName').value,
+            rakeType: document.getElementById('rakeType').value,
+            trainLoad: document.getElementById('trainLoad').value, // NEW
+            mps: document.getElementById('mps').value,
+            section: document.getElementById('section').value
+        };
+
+        try {
+            // 2. Process Data (Calls RTIS.js function)
+            const result = await processRTISData(fileInput.files[0], inputs);
+            
+            // 3. Save to LocalStorage for Report Page
+            localStorage.setItem('spmAnalysisResult', JSON.stringify(result));
+            
+            // 4. Redirect
+            window.location.href = 'report.html';
+        } catch (error) {
+            console.error(error);
+            alert("Error analyzing file: " + error.message);
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
