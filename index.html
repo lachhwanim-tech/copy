@@ -16,35 +16,45 @@
     </script>
     <style>
 /* --- 1. CSS Variables for Theming (Day/Night Mode) --- */
+/* --- 1. CSS Variables (Default Light Mode) --- */
 :root {
-    --bg-gradient: linear-gradient(135deg, #0f172a, #1184f8);
-    --text-color: #f8fafc;
-    --text-muted: #cbd5e1;
-    --accent-color: #00aaff;
-    --accent-glow: rgba(0, 170, 255, 0.5);
-    --border-color: rgba(0, 170, 255, 0.3); 
-    --box-bg: rgba(20, 30, 48, 0.85);
-    --input-bg: #111827; 
-    --success-color: #22c55e;
-    --danger-color: #ef4444;
+    /* Background: Soft Blue-White Gradient (Professional Look) */
+    --bg-gradient: linear-gradient(135deg, #e0f7fa 0%, #f0f4f8 100%);
+    
+    /* Text Colors */
+    --text-color: #1a1a1a;        /* Dark Black for sharpness */
+    --text-muted: #555555;        /* Grey for labels */
+    
+    /* Accents */
+    --accent-color: #0056b3;      /* Professional Navy Blue */
+    --accent-glow: rgba(0, 86, 179, 0.15);
+    
+    /* Borders & Boxes */
+    --border-color: #ced4da;      /* Light Grey Border */
+    --box-bg: #ffffff;            /* Pure White Box */
+    
+    /* Inputs */
+    --input-bg: #ffffff;          /* White Input Background (Saaf dikhega) */
+    
+    /* Status Colors */
+    --success-color: #198754;     /* Green */
+    --danger-color: #dc3545;      /* Red */
+    
+    /* Highlights */
+    --h3-highlight-bg: #e7f1ff;   /* Light Blue Highlight */
+    --h4-highlight-bg: #e6fffa;   /* Light Teal Highlight */
+    
     --font-main: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-    --h3-highlight-bg: rgba(88, 28, 135, 0.3); /* Dark Purple Glow */
-    --h4-highlight-bg: rgba(17, 94, 89, 0.4);  /* Dark Teal Glow */
 }
 
-body.day-mode {
-    --bg-gradient: linear-gradient(135deg, #82f9bf, #f8f9fa);
-    --text-color: #0c0c0d;
-    --text-muted: #495057;
-    --accent-color: #0056b3;
-    --accent-glow: rgba(0, 86, 179, 0.3);
-    --border-color: rgba(0, 86, 179, 0.5); 
-    --box-bg: rgb(255, 255, 255);
-    --input-bg: #60caffc1;
-    --success-color: #198754;
-    --danger-color: #dc3545;
-    --h3-highlight-bg: rgba(224, 242, 254, 0.8); /* Light Sky Blue */
-    --h4-highlight-bg: rgba(220, 252, 231, 0.8); /* Light Mint Green */
+/* Ensure inputs are clean and readable */
+input[type="text"],
+input[type="datetime-local"],
+input[type="file"],
+select {
+    color: #000000;       /* Black Text inside inputs */
+    background-color: #ffffff; /* White background */
+    border: 1px solid #ccc;
 }
 
 /* --- 2. General Body and Layout Styles --- */
