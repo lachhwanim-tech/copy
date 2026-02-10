@@ -626,16 +626,7 @@ input:checked + .slider:before {
 <body>
     <div class="container">
         <img src="railway logo.png" alt="Railway Logo" class="logo">
-        <div class="theme-switch-wrapper">
-            <label class="theme-switch" for="checkbox">
-               <a href="graph.html" target="_blank" class="top-right-nav-link">
-            Signal Wise Analysis
-        </a>
-        <label class="theme-switch" for="checkbox">
-            <input type="checkbox" id="checkbox" />
-            <div class="slider round"></div>
-        </label>
-    </div>
+       
         <h1>E-GARUD ई गरुड़</h1>
         <a href="manual.html" target="_blank" class="manual-link">
            Need Help? View the User Manual
@@ -1104,35 +1095,7 @@ input:checked + .slider:before {
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
-        // --- Theme Switcher Logic ---
-        const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
-        const currentTheme = localStorage.getItem('theme');
-
-        if (currentTheme) {
-            document.body.classList.add(currentTheme);
-            if (currentTheme === 'day-mode') {
-                toggleSwitch.checked = false;
-            } else {
-                toggleSwitch.checked = true;
-            }
-        } else {
-            document.body.classList.add('day-mode');
-             toggleSwitch.checked = false;
-        }
-
-        function switchTheme(e) {
-            if (e.target.checked) {
-                document.body.classList.remove('day-mode');
-                localStorage.setItem('theme', 'night-mode');
-            } else {
-                document.body.classList.add('day-mode');
-                localStorage.setItem('theme', 'day-mode');
-            }
-        }
-
-        toggleSwitch.addEventListener('change', switchTheme, false);
-        // --- End Theme Switcher Logic ---
-
+        
         try {
             // --- NEW: Fetch CLIMICRO.csv logic start ---
             fetch('CLIMICRO.csv')
