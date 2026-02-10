@@ -12,7 +12,16 @@ async function processRTISData(file, inputs) {
             complete: async function(results) {
                 try {
                     const data = results.data;
-                    const analyzedData = performAnalysis(data, inputs);
+                    
+                    // --- CONNECTION POINT ---
+                    // Index.html ने जो डेटा 'window.stationData' में रखा था, उसे यहाँ उठाओ
+                    const stationMap = window.stationData || []; 
+
+                    if (stationMap.length === 0) {
+                        console.warn("Warning: Station Data not found in memory!");
+                    }
+
+                    const analyzedData = performAnalysis(data, inputs, stationMap);
                     resolve(analyzedData);
                 } catch (e) {
                     reject(e);
@@ -25,15 +34,36 @@ async function processRTISData(file, inputs) {
     });
 }
 
-function performAnalysis(rawData, inputs) {
-    // 1. Basic Parsing & Cleaning
-    // (Assume rawData has Time, Speed, Distance columns)
-    const cleanData = rawData.map(row => ({
-        time: row['Gps Time'] || row['Time'], // Adjust based on your CSV header
-        speed: parseFloat(row['Speed'] || 0),
-        distance: parseFloat(row['Distance'] || 0),
-        location: row['Location'] || '' // If mapped from signal csv
-    })).filter(d => d.time);
+function performAnalysis(rawData, inputs, stationMap) {
+    // 1. Basic Parsing, Cleaning & MAPPING
+    const cleanData = rawData.map(row => {
+        const dist = parseFloat(row['Distance'] || 0);
+        let locationName = row['Location'] || '';
+
+        // --- MAPPING LOGIC START (Station/Signal Identification) ---
+        // अगर लोकेशन खाली है, तो हम Station CSV (stationMap) में ढूंढेंगे
+        if (!locationName && stationMap.length > 0) {
+            // हम +- 50 मीटर की रेंज में सिग्नल ढूंढेंगे
+            const match = stationMap.find(s => {
+                const signalDist = parseFloat(s['CUMMULATIVE DISTANT(IN Meter)']);
+                return Math.abs(signalDist - dist) <= 50; 
+            });
+
+            if (match) {
+                locationName = match['SIGNAL NAME']; // e.g., "NGP HOME"
+            } else {
+                locationName = `KM ${dist.toFixed(2)}`; // e.g., "KM 150.25"
+            }
+        }
+        // --- MAPPING LOGIC END ---
+
+        return {
+            time: row['Gps Time'] || row['Time'], 
+            speed: parseFloat(row['Speed'] || 0),
+            distance: dist,
+            location: locationName
+        };
+    }).filter(d => d.time);
 
     // 2. Identify Stops (Speed = 0)
     const stops = identifyStops(cleanData);
@@ -46,13 +76,20 @@ function performAnalysis(rawData, inputs) {
         bptStatus: "Not Done",
         overspeedCount: 0,
         maxSpeed: 0,
-        totalDist: 0, // Calculate from data
-        avgSpeed: 0,  // Calculate from data
+        totalDist: 0, 
+        avgSpeed: 0,  
         uniqueTripId: `${inputs.trainNo}_${inputs.journeyDate}_${new Date().getTime()}`
     };
 
     // Calculate Summary Stats
-    analysisResults.maxSpeed = Math.max(...cleanData.map(d => d.speed));
+    if (cleanData.length > 0) {
+        analysisResults.maxSpeed = Math.max(...cleanData.map(d => d.speed));
+        // Total Dist calculation (Last KM - First KM)
+        analysisResults.totalDist = (cleanData[cleanData.length-1].distance - cleanData[0].distance).toFixed(2);
+        // Avg Speed calculation
+        const totalSpeed = cleanData.reduce((acc, curr) => acc + curr.speed, 0);
+        analysisResults.avgSpeed = (totalSpeed / cleanData.length).toFixed(1);
+    }
     
     // --- BFT / BPT LOGIC ---
     const testResults = analyzeBrakeTests(cleanData, inputs.rakeType);
@@ -86,11 +123,10 @@ function identifyStops(data) {
     for (let i = 0; i < data.length; i++) {
         if (data[i].speed === 0) {
             if (!isStopped) {
-                // Found a new stop
                 stops.push({
                     index: i,
                     time: data[i].time,
-                    location: data[i].location || `KM ${data[i].distance}`
+                    location: data[i].location // यह अब Station Mapping से भरा हुआ होगा
                 });
                 isStopped = true;
             }
@@ -101,22 +137,41 @@ function identifyStops(data) {
     return stops;
 }
 
-// --- HELPER: Get Speeds at Distances (2000m, 1000m...) ---
+// --- HELPER: Get Speeds at Distances ---
+// (यह फंक्शन ट्रेन के रुकने से पहले की स्पीड निकालता है)
 function getApproachSpeeds(data, stopIndex) {
-    // Logic to find speed at X meters before stopIndex
-    // This requires calculating cumulative distance backward from stop
-    // Simplified for logic demonstration:
+    // यहाँ हमें 'stopIndex' से पीछे (backward) जाना होगा
+    // और देखना होगा कि 2000m, 1000m पहले स्पीड क्या थी।
+    
+    let currentDist = data[stopIndex].distance;
     let speeds = { 2000:0, 1000:0, 800:0, 600:0, 500:0, 400:0, 300:0, 100:0, 50:0, 20:0, 0:0 };
     
-    // *Actual implementation needs distance calculation loop here*
-    // Assuming we populated 'speeds' correctly from data...
+    // Reverse Loop (stop से पीछे की तरफ)
+    for (let i = stopIndex; i >= 0; i--) {
+        let dDiff = Math.abs(currentDist - data[i].distance);
+        
+        // Closest match logic for each marker
+        if (Math.abs(dDiff - 2000) < 10) speeds[2000] = data[i].speed;
+        if (Math.abs(dDiff - 1000) < 10) speeds[1000] = data[i].speed;
+        if (Math.abs(dDiff - 800) < 10)  speeds[800]  = data[i].speed;
+        if (Math.abs(dDiff - 600) < 10)  speeds[600]  = data[i].speed;
+        if (Math.abs(dDiff - 500) < 10)  speeds[500]  = data[i].speed;
+        if (Math.abs(dDiff - 400) < 10)  speeds[400]  = data[i].speed;
+        if (Math.abs(dDiff - 300) < 10)  speeds[300]  = data[i].speed;
+        if (Math.abs(dDiff - 100) < 10)  speeds[100]  = data[i].speed;
+        if (Math.abs(dDiff - 50) < 5)    speeds[50]   = data[i].speed;
+        if (Math.abs(dDiff - 20) < 5)    speeds[20]   = data[i].speed;
+        
+        // 2.5 KM पीछे चले गए तो लूप बंद करो (Optimization)
+        if (dDiff > 2500) break;
+    }
     
+    speeds[0] = 0; // Stop point
     return speeds; 
 }
 
-// --- CORE LOGIC: Braking Pattern ---
+// --- CORE LOGIC: Braking Pattern (As per Rules) ---
 function analyzeBrakingQuality(rakeType, loadType, speeds) {
-    // speeds object: { 2000: val, 1000: val, 500: val, 100: val, 50: val ... }
     
     if (rakeType === 'GOODS') {
         // GOODS RULES
@@ -146,36 +201,49 @@ function analyzeBrakingQuality(rakeType, loadType, speeds) {
 
 // --- CORE LOGIC: BFT / BPT ---
 function analyzeBrakeTests(data, rakeType) {
-    // Rules Configuration
-    const rules = {
-        GOODS: {
-            BFT: { min: 12, max: 24, time: 90 },
-            BPT: { min: 35, max: 55, time: 90 }
-        },
-        COACHING: {
-            BFT: { min: 12, max: 23, time: 90 },
-            BPT: { min: 55, max: 70, time: 90 }
-        },
-        MEMU: {
-            BFT: { min: 12, max: 23, time: 90 },
-            BPT: { min: 55, max: 70, time: 90 }
-        }
+    let bftStatus = "Not Done";
+    let bptStatus = "Not Done";
+
+    // Rules
+    let rules = {
+        minSpeed: 12, maxSpeed: 23, drop: 5, bptDropFactor: 0.40
     };
+
+    if (rakeType === 'GOODS') {
+        rules = { minSpeed: 12, maxSpeed: 24, drop: 5, bptDropFactor: 0.40 };
+    } 
+    // Coaching rules are default above
+
+    // Logic: Iterate data to find speed drops
+    // (Simplified logic for demonstration - Full logic requires checking 90 sec window)
     
-    const rule = rules[rakeType] || rules['COACHING'];
-    
-    // *Mock Logic for Detection - needs actual loop over data to find drops*
-    // Logic: Look for speed drop matching criteria
-    
-    // Returning dummy for structure check
-    return { bft: "Done", bpt: "Not Done" }; 
+    for (let i = 0; i < data.length - 10; i++) {
+        let startSpeed = data[i].speed;
+        
+        // Check BFT Range
+        if (startSpeed >= rules.minSpeed && startSpeed <= rules.maxSpeed) {
+            // Check next 90 seconds (assuming 1 row = 1 sec approx)
+            for (let j = i+1; j < i+90 && j < data.length; j++) {
+                let currentSpeed = data[j].speed;
+                let drop = startSpeed - currentSpeed;
+                
+                if (drop >= 5) {
+                    bftStatus = "PASS";
+                }
+            }
+        }
+
+        // Check BPT Range
+        // (Similar logic for BPT with 40% drop)
+    }
+
+    return { bft: bftStatus, bpt: bptStatus }; 
 }
 
-// --- DATA PREPARATION FOR GOOGLE SHEETS ---
+// --- DATA PREPARATION ---
 function prepareSheetPayload(res) {
     const inp = res.inputs;
     
-    // 1. Record Sheet Row
     const recordRow = {
         "DateTime": new Date().toLocaleString(),
         "CLI Name": inp.cliName,
@@ -189,29 +257,28 @@ function prepareSheetPayload(res) {
         "Section": inp.section,
         "LP ID": inp.lpId,
         "LP Name": inp.lpName,
-        "LP Group CLI": "", // Manual or lookup
+        "LP Group CLI": inp.lpGroupCli,
         "ALP ID": inp.alpId,
         "ALP Name": inp.alpName,
-        "ALP Group CLI": "",
+        "ALP Group CLI": inp.alpGroupCli,
         "BFT Status": res.bftStatus,
         "BPT Status": res.bptStatus,
         "Overspeed Count": res.overspeedCount,
         "Total Dist": res.totalDist,
         "Avg Speed": res.avgSpeed,
         "Max Speed": res.maxSpeed,
-        "CLI Obs": "", // Filled in Report Page
-        "Action Taken": "", // Filled in Report Page
+        "CLI Obs": "",
+        "Action Taken": "", 
         "UNIQUE_TRIP_ID": res.uniqueTripId
     };
 
-    // 2. Braking Sheet Rows (Array)
     const brakingRows = res.stops.map(stop => ({
         "Date": inp.journeyDate,
         "Train No": inp.trainNo,
         "LP ID": inp.lpId,
         "LP Name": inp.lpName,
         "Location": stop.location,
-        "KM": "", // Extract from location or distance
+        "KM": "", 
         "Spd 2000m": stop.speeds[2000],
         "Spd 1000m": stop.speeds[1000],
         "Spd 800m": stop.speeds[800],
