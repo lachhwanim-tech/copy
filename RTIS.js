@@ -679,6 +679,7 @@ document.getElementById('spmForm').addEventListener('submit', async (e) => {
                 const reportData = {
                     trainDetails: [
                         { label: 'Loco Number', value: locoNumber }, { label: 'Train Number', value: trainNumber },
+                        { label: 'Train Load', value: document.getElementById('trainLoad').value },
                         { label: 'Type of Rake', value: rakeType }, { label: 'Max Permissible Speed', value: `${maxPermissibleSpeed} kmph` },
                         { label: 'Section', value: section }, { label: 'Route', value: routeSection }, { label: 'SPM Type', value: spmType },
                         { label: 'Analysis By', value: cliName },
