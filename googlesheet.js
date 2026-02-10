@@ -1,6 +1,6 @@
 async function sendDataToGoogleSheet(data) {
-    const primaryAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbwX5LvESCoukL91s9Txkr8tRR-wz4FEzKOd3kPD6l26IlwqO4BWltKpYAtryABJXKAZ/exec';
-    const otherAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbwX5LvESCoukL91s9Txkr8tRR-wz4FEzKOd3kPD6l26IlwqO4BWltKpYAtryABJXKAZ/exec'; 
+    const primaryAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbyfdaZ8frpNrrDxeDJ1X1uTEIHH0yZuYFeyulj7x5LAKtDxYJuW8eBvAcRE9WsvPy7f/exec';
+    const otherAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbyfdaZ8frpNrrDxeDJ1X1uTEIHH0yZuYFeyulj7x5LAKtDxYJuW8eBvAcRE9WsvPy7f/exec'; 
     const ALLOWED_HQS = ['BYT', 'R', 'RSD', 'DBEC', 'DURG', 'DRZ', 'MXA', 'BYL', 'BXA', 'AAGH', 'PPYD'];
 
     console.log("Preparing Clean Payload...");
