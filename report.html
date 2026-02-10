@@ -248,9 +248,9 @@
     </div>
     <div class="report-container">
         <img src="railway logo.png" alt="Railway Logo" class="logo">
-        <h1>SANKET</h1>
-        <h3>(SPM Analysis and Navigation KPA Extraction Tool)</h3>
-        <h4>(Designed and Developed by Electrical(OP) Bilaspur S.E.C.Railway)</h4>
+        <h1>E-GARUD ई गरुड़</h1>
+        <h3>(CREW FOOTPLATE ACTIVITY MONITORING SYSTEM)</h3>
+        <h4>(Electrical(OP) Raipur South East Central Railway)</h4>
         <div class="tabs">
             <button class="tab-button active" data-tab="train-details">Train Details</button>
             <button class="tab-button" data-tab="crew-details">Crew Details</button>
@@ -917,7 +917,7 @@ async function generatePDF() { // <<< 1. Function ko ASYNC banaya gaya
             doc.text(`Generated on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false })}`, margin, pageHeight - 10);
             doc.text(`Page ${currentPage} of ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
             doc.setFont('helvetica', 'bold');
-            doc.text('Analysis Through Sanket 1.0', pageWidth / 2, pageHeight - 10, { align: 'center' });
+            doc.text('Analysis Through E-GARUD ई गरुड़', pageWidth / 2, pageHeight - 10, { align: 'center' });
         };
         
          const addFooterToAllPages = () => { // Helper to add footer to all pages at the end
