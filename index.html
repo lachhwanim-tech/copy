@@ -652,7 +652,7 @@ input:checked + .slider:before {
                 <div class="form-section">
                     <div class="section-header">
                         <h2>LP DETAILS</h2>
-                        <button type="button" id="manualLpBtn" class="manual-entry-btn">MANNUAL ENTRY MODE</button>
+                
                     </div>
                     <div class="box">
                         <div class="form-group">
@@ -687,7 +687,7 @@ input:checked + .slider:before {
                 <div class="form-section">
                     <div class="section-header">
                         <h2>ALP DETAILS</h2>
-                        <button type="button" id="manualAlpBtn" class="manual-entry-btn">MANNUAL ENTRY MODE</button>
+                        
                     </div>
                     <div class="box">
                         <div class="form-group">
@@ -1232,51 +1232,6 @@ input:checked + .slider:before {
             }
             // --- End CLI ID Logic ---
             
-            // --- MANUAL ENTRY BUTTON LOGIC ---
-            const manualLpBtn = document.getElementById('manualLpBtn');
-            const manualAlpBtn = document.getElementById('manualAlpBtn');
-
-            const lpFields = [
-                document.getElementById('lpName'),
-                document.getElementById('lpDesg'),
-                document.getElementById('lpGroupCli'),
-                document.getElementById('lpCugNumber')
-            ];
-
-            const alpFields = [
-                document.getElementById('alpName'),
-                document.getElementById('alpDesg'),
-                document.getElementById('alpGroupCli'),
-                document.getElementById('alpCugNumber')
-            ];
-            
-            manualLpBtn.addEventListener('click', () => {
-                lpFields.forEach(field => {
-                    field.readOnly = false;
-                });
-                document.getElementById('lpName').focus();
-            });
-            
-            manualAlpBtn.addEventListener('click', () => {
-                alpFields.forEach(field => {
-                    field.readOnly = false;
-                });
-                document.getElementById('alpName').focus();
-            });
-            // --- END MANUAL ENTRY LOGIC ---
-            
-            // --- START: Force Uppercase for Manual Entry ---
-            const allManualFields = [...lpFields, ...alpFields];
-
-            allManualFields.forEach(field => {
-                field.addEventListener('input', () => {
-                    const start = field.selectionStart;
-                    const end = field.selectionEnd;
-                    field.value = field.value.toUpperCase();
-                    field.setSelectionRange(start, end);
-                });
-            });
-            // --- END: Force Uppercase for Manual Entry ---
 
             // --- NOTE: Old "CLI Name Dropdown" logic has been removed as requested ---
 
