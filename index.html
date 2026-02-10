@@ -3,474 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANKET - Final Analysis Report</title>
+    <title>SANKET - SPM Analysis Tool</title>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
+    <script src="RTIS.js"></script>
+    <script src="googlesheet.js"></script> 
+
     <style>
-        /* --- PROFESSIONAL THEME --- */
-        :root {
-            --primary-bg: #f0f2f5;
-            --card-bg: #ffffff;
-            --header-bg: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); /* Blue Gradient */
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --accent-success: #10b981; /* Green */
-            --accent-danger: #ef4444; /* Red */
-            --accent-warning: #f59e0b; /* Orange */
-            --border-radius: 12px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        /* --- HEADER CARD --- */
-        .report-header {
-            background: var(--header-bg);
-            color: white;
-            padding: 25px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .report-header h1 { margin: 0; font-size: 1.8rem; letter-spacing: 1px; }
-        .report-header p { margin: 5px 0 0; opacity: 0.9; font-size: 0.9rem; }
-        .status-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            border: 1px solid rgba(255,255,255,0.4);
-        }
-
-        /* --- CONTENT CARDS --- */
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            box-shadow: var(--shadow);
-            margin-bottom: 20px;
-            border-top: 4px solid #3b82f6; /* Accent Border */
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #374151;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 10px;
-        }
-        .section-title span { background: #e0f2fe; color: #0284c7; padding: 5px 10px; border-radius: 6px; margin-right: 10px; font-size: 0.9rem; }
-
-        /* --- DATA GRIDS --- */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        .info-item { background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; }
-        .info-label { display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
-        .info-value { font-size: 1rem; font-weight: 600; color: var(--text-main); }
-
-        /* --- TABLE STYLING --- */
-        .styled-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        .styled-table th { background-color: #f3f4f6; color: #374151; font-weight: 600; text-align: left; padding: 12px; border-bottom: 2px solid #e5e7eb; }
-        .styled-table td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; color: #4b5563; }
-        .styled-table tr:hover { background-color: #f9fafb; }
-        
-        .tag { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
-        .tag-green { background: #d1fae5; color: #065f46; }
-        .tag-red { background: #fee2e2; color: #991b1b; }
-
-        /* --- SMART REMARKS (AGREE/DISAGREE) --- */
-        .remark-card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 10px;
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-        }
-        .remark-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        
-        .remark-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .remark-title { font-weight: bold; color: #dc2626; display: flex; align-items: center; gap: 8px; }
-        
-        .toggle-group { display: flex; gap: 0; background: #f3f4f6; border-radius: 6px; padding: 3px; }
-        .toggle-option {
-            padding: 6px 15px; cursor: pointer; border-radius: 4px; font-size: 0.85rem; font-weight: 600; transition: 0.2s;
-            display: flex; align-items: center; gap: 5px;
-        }
-        
-        /* Radio Button Styling Trick */
-        input[type="radio"] { display: none; }
-        input[type="radio"]:checked + span { background: white; shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        
-        .opt-yes { color: var(--accent-success); }
-        .opt-no { color: var(--accent-danger); }
-
-        .active-yes { background: #ffffff; color: var(--accent-success); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .active-no { background: #ffffff; color: var(--accent-danger); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-
-        .reason-box {
-            display: none; /* Hidden by default */
-            margin-top: 10px;
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            resize: vertical;
-            background: #fdf2f2; /* Light red bg for reason */
-        }
-        .reason-box:focus { outline: none; border-color: var(--accent-danger); }
-
-        /* --- ACTION BAR --- */
-        .action-bar { margin-top: 30px; display: flex; gap: 15px; }
-        .btn {
-            flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.3s;
-            display: flex; justify-content: center; align-items: center; gap: 10px;
-        }
-        .btn-submit { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); }
-        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4); }
-        .btn-back { background: #e5e7eb; color: #374151; max-width: 150px; }
-        
-        /* PRINT STYLES */
-        @media print {
-            body { background: white; padding: 0; }
-            .container { max-width: 100%; width: 100%; box-shadow: none; margin: 0; }
-            .card { box-shadow: none; border: 1px solid #eee; break-inside: avoid; }
-            .report-header { background: #1e3a8a !important; -webkit-print-color-adjust: exact; }
-            .action-bar, .toggle-group { display: none; }
-            .reason-box { display: block; border: none; background: none; padding: 0; font-style: italic; }
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
+        .header h1 { margin: 0; color: #2c3e50; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .section-title { grid-column: span 2; font-weight: bold; color: #3498db; border-bottom: 1px solid #eee; margin-top: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-weight: 600; font-size: 13px; color: #555; margin-bottom: 4px; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        input[readonly] { background: #f9f9f9; color: #777; }
+        .btn-analyze { grid-column: span 2; padding: 15px; background: #27ae60; color: white; border: none; font-size: 18px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+        .btn-analyze:hover { background: #219150; }
+        #dbStatus { text-align: center; font-size: 12px; margin-bottom: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div class="header">
+        <h1>SANKET</h1>
+        <p>SPM Analysis & Navigation KPA Extraction Tool</p>
+    </div>
     
-    <div class="report-header">
-        <div>
-            <h1>SANKET</h1>
-            <p>SPM Analysis & Navigation KPA Extraction Tool</p>
+    <div id="dbStatus">Loading Database...</div>
+
+    <div class="form-grid">
+        <div class="section-title">Trip Details</div>
+        <div class="form-group"><label>Train No</label><input type="text" id="trainNo" onblur="checkDuplicateEntry()"></div>
+        <div class="form-group"><label>Journey Date</label><input type="date" id="journeyDate" onblur="checkDuplicateEntry()"></div>
+        <div class="form-group"><label>Loco No</label><input type="text" id="locoNo"></div>
+        <div class="form-group"><label>Load Condition</label>
+            <select id="trainLoad"><option value="LOAD">LOADED</option><option value="EMPTY">EMPTY</option></select>
         </div>
-        <div class="status-badge" id="tripStatusBadge">Processing...</div>
-    </div>
 
-    <div class="card">
-        <div class="section-title"><span>01</span> Trip Summary</div>
-        <div class="info-grid" id="tripInfo">
-            </div>
-    </div>
+        <div class="section-title">Analysis CLI</div>
+        <div class="form-group"><label>CLI ID</label><input type="text" id="cliId" placeholder="e.g. BSP0187" onblur="autoFillCLI()"></div>
+        <div class="form-group"><label>CLI Name</label><input type="text" id="cliName" readonly></div>
 
-    <div class="card">
-        <div class="section-title"><span>02</span> Speed Profile Analysis</div>
-        <div style="height: 300px; width: 100%;">
-            <canvas id="speedChart"></canvas>
+        <div class="section-title">LP Details</div>
+        <div class="form-group"><label>LP ID</label><input type="text" id="lpId" onblur="autoFillLP()"></div>
+        <div class="form-group"><label>LP Name</label><input type="text" id="lpName" readonly></div>
+        <input type="hidden" id="lpDesg"><input type="hidden" id="lpGroupCli"><input type="hidden" id="lpCug">
+
+        <div class="section-title">ALP Details</div>
+        <div class="form-group"><label>ALP ID</label><input type="text" id="alpId" onblur="autoFillALP()"></div>
+        <div class="form-group"><label>ALP Name</label><input type="text" id="alpName" readonly></div>
+        <input type="hidden" id="alpDesg"><input type="hidden" id="alpGroupCli"><input type="hidden" id="alpCug">
+
+        <div class="section-title">Technical Parameters</div>
+        <div class="form-group"><label>From Stn</label><input type="text" id="fromStn"></div>
+        <div class="form-group"><label>To Stn</label><input type="text" id="toStn"></div>
+        <div class="form-group"><label>Rake Type</label>
+            <select id="rakeType"><option value="GOODS">GOODS</option><option value="COACHING">COACHING</option><option value="MEMU">MEMU</option></select>
         </div>
-    </div>
+        <div class="form-group"><label>MPS</label><input type="number" id="mps" value="110"></div>
+        <div class="form-group" style="grid-column: span 2;"><label>Section</label><input type="text" id="section" value="NGP-BSP"></div>
 
-    <div class="card">
-        <div class="section-title"><span>03</span> Braking Pattern & Stops</div>
-        <div style="overflow-x: auto;">
-            <table class="styled-table" id="brakingTable">
-                <thead>
-                    <tr>
-                        <th>Location</th>
-                        <th>2000m</th><th>1000m</th><th>500m</th><th>100m</th><th>50m</th><th>0m</th>
-                        <th>Status</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
+        <div class="section-title">Upload Data</div>
+        <div class="form-group" style="grid-column: span 2;">
+            <label>SPM/RTIS File (.csv)</label>
+            <input type="file" id="spmFile" accept=".csv">
         </div>
-    </div>
 
-    <div class="card" style="border-top-color: var(--accent-danger);">
-        <div class="section-title"><span>04</span> CLI Remarks & Abnormalities</div>
-        <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">
-            Please review the system generated abnormalities. 
-            Select <strong>Agree</strong> to confirm, or <strong>Disagree</strong> to provide a justification.
-        </p>
-        
-        <div id="remarksContainer">
-            </div>
+        <button class="btn-analyze" id="analyzeBtn" onclick="startAnalysis()">Analyze Data</button>
     </div>
-
-    <div class="action-bar">
-        <button class="btn btn-back" onclick="window.location.href='index.html'">Back</button>
-        <button class="btn btn-submit" id="btnFinalSubmit" onclick="submitReport()">
-            <span>Final Submit & Download Report</span>
-        </button>
-    </div>
-
 </div>
 
-<script src="googlesheet.js"></script>
 <script>
-    // --- LOAD DATA ---
-    const data = JSON.parse(localStorage.getItem('spmAnalysisResult'));
-    if (!data) {
-        alert("No Analysis Data Found!");
-        window.location.href = 'index.html';
-    }
-    const inp = data.inputs;
-
-    // --- 1. RENDER HEADER & INFO ---
-    document.getElementById('tripStatusBadge').innerText = `TRIP ID: ${data.uniqueTripId.slice(-6)}`;
-    
-    document.getElementById('tripInfo').innerHTML = `
-        <div class="info-item"><span class="info-label">Train / Loco</span><div class="info-value">${inp.trainNo} / ${inp.locoNo}</div></div>
-        <div class="info-item"><span class="info-label">Date</span><div class="info-value">${inp.journeyDate}</div></div>
-        <div class="info-item"><span class="info-label">Load / Type</span><div class="info-value">${inp.trainLoad} / ${inp.rakeType}</div></div>
-        <div class="info-item"><span class="info-label">CLI</span><div class="info-value">${inp.cliName}</div></div>
-        <div class="info-item"><span class="info-label">Crew (LP/ALP)</span><div class="info-value">${inp.lpName} / ${inp.alpName}</div></div>
-        <div class="info-item"><span class="info-label">BFT Status</span><div class="info-value" style="color:${data.bftStatus==='PASS'?'green':'red'}">${data.bftStatus}</div></div>
-        <div class="info-item"><span class="info-label">BPT Status</span><div class="info-value" style="color:${data.bptStatus==='PASS'?'green':'red'}">${data.bptStatus}</div></div>
-        <div class="info-item"><span class="info-label">Max Speed</span><div class="info-value">${data.maxSpeed} Kmph</div></div>
-    `;
-
-    // --- 2. RENDER CHART ---
-    const ctx = document.getElementById('speedChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.stops.map(s => s.location),
-            datasets: [{
-                label: 'Approach Speed (500m)',
-                data: data.stops.map(s => s.speeds[500]),
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, title: {display:true, text:'Speed (Kmph)'} } }
-        }
-    });
-
-    // --- 3. RENDER TABLE ---
-    const tbody = document.querySelector('#brakingTable tbody');
-    data.stops.forEach(stop => {
-        const isBad = stop.analysis === 'Late Braking';
-        const badgeClass = isBad ? 'tag-red' : 'tag-green';
-        
-        const row = `<tr>
-            <td><strong>${stop.location}</strong></td>
-            <td>${stop.speeds[2000]}</td>
-            <td>${stop.speeds[1000]}</td>
-            <td>${stop.speeds[500]}</td>
-            <td>${stop.speeds[100]}</td>
-            <td>${stop.speeds[50]}</td>
-            <td>${stop.speeds[0]}</td>
-            <td><span class="tag ${badgeClass}">${stop.analysis}</span></td>
-            <td>${stop.remark}</td>
-        </tr>`;
-        tbody.innerHTML += row;
-    });
-
-    // --- 4. SMART REMARKS RENDERER ---
-    const remarksDiv = document.getElementById('remarksContainer');
-    let abnormalities = [];
-
-    // Detect Issues
-    if (data.bftStatus !== 'PASS') abnormalities.push("BFT Not Done / Failed as per rules");
-    if (data.bptStatus !== 'PASS') abnormalities.push("BPT Not Done / Failed as per rules");
-    if (data.overspeedCount > 0) abnormalities.push(`Overspeeding Detected (${data.overspeedCount} instances)`);
-    
-    const lateStops = data.stops.filter(s => s.analysis === 'Late Braking').length;
-    if (lateStops > 0) abnormalities.push(`Late Braking / Poor Handling Detected (${lateStops} stops)`);
-
-    if (abnormalities.length === 0) {
-        remarksDiv.innerHTML = `
-            <div style="text-align:center; padding: 20px; color: var(--accent-success);">
-                <h3 style="margin:0;">✅ No Abnormalities Found</h3>
-                <p>System analysis indicates a safe trip complying with all parameters.</p>
-            </div>`;
-    } else {
-        abnormalities.forEach((item, idx) => {
-            remarksDiv.innerHTML += `
-                <div class="remark-card">
-                    <div class="remark-header">
-                        <div class="remark-title">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            ${item}
-                        </div>
-                        <div class="toggle-group">
-                            <label class="toggle-option active-yes" id="lbl_yes_${idx}">
-                                <input type="radio" name="abn_${idx}" value="yes" checked onchange="handleRemarkToggle(${idx}, 'yes')">
-                                <span>Agree</span>
-                            </label>
-                            <label class="toggle-option" id="lbl_no_${idx}">
-                                <input type="radio" name="abn_${idx}" value="no" onchange="handleRemarkToggle(${idx}, 'no')">
-                                <span>Disagree</span>
-                            </label>
-                        </div>
-                    </div>
-                    <textarea id="reason_${idx}" class="reason-box" placeholder="Please write the specific reason why you disagree with this system finding... (Max 20 words)" maxlength="150"></textarea>
-                </div>
-            `;
-        });
-    }
-
-    // Toggle Logic for UI styling & Textbox
-    window.handleRemarkToggle = function(idx, val) {
-        const txt = document.getElementById(`reason_${idx}`);
-        const lblYes = document.getElementById(`lbl_yes_${idx}`);
-        const lblNo = document.getElementById(`lbl_no_${idx}`);
-
-        if (val === 'no') {
-            txt.style.display = 'block';
-            txt.focus();
-            lblNo.classList.add('active-no');
-            lblYes.classList.remove('active-yes');
-        } else {
-            txt.style.display = 'none';
-            txt.value = '';
-            lblYes.classList.add('active-yes');
-            lblNo.classList.remove('active-no');
-        }
+    // 1. CONFIG: FILE PATHS (Local Folder)
+    const MASTER_FILES = {
+        CREW: "./CREW.csv",
+        CLI: "./CLIMICRO.csv",
+        STATION: "./Station_Signal_Interdistant.csv"
     };
 
-    // --- 5. SUBMISSION LOGIC ---
-    window.submitReport = async function() {
-        const btn = document.getElementById('btnFinalSubmit');
-        btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Saving Data...</span>`;
+    let crewData = [], cliData = [];
+    window.stationData = [];
 
-        // Gather Remarks
-        let finalObs = [];
-        if (abnormalities.length === 0) finalObs.push("System OK");
-        
-        let hasError = false;
-        abnormalities.forEach((item, idx) => {
-            const isAgreed = document.querySelector(`input[name="abn_${idx}"]:checked`).value === 'yes';
-            if (isAgreed) {
-                finalObs.push(`${item}: Agreed`);
-            } else {
-                const reason = document.getElementById(`reason_${idx}`).value.trim();
-                if (!reason) {
-                    alert("Please provide a reason for disagreeing with: " + item);
-                    hasError = true;
-                }
-                finalObs.push(`${item}: Disagreed [${reason}]`);
-            }
-        });
-
-        if (hasError) {
-            btn.disabled = false;
-            btn.innerHTML = `<span>Final Submit & Download Report</span>`;
-            return;
-        }
-
-        // Add to Payload
-        data.sheetPayload.recordRow['CLI Obs'] = finalObs.join(" | ");
-
-        // Send to Google Sheet
+    // 2. LOAD DATABASE
+    window.onload = async function() {
         try {
-            if (window.sendToGoogleSheet) {
-                await window.sendToGoogleSheet(data.sheetPayload);
-                
-                // Generate PDF
-                btn.innerHTML = `<span>📄 Generating PDF...</span>`;
-                generatePDF();
-            } else {
-                alert("Error: Connection script missing.");
-            }
+            await Promise.all([
+                loadCSV(MASTER_FILES.CREW, d => crewData = d),
+                loadCSV(MASTER_FILES.CLI, d => cliData = d),
+                loadCSV(MASTER_FILES.STATION, d => window.stationData = d)
+            ]);
+            document.getElementById('dbStatus').innerHTML = "✅ Database Connected";
+            document.getElementById('dbStatus').style.color = "green";
         } catch (e) {
-            console.error(e);
-            alert("Submission Failed! Check Internet.");
-            btn.disabled = false;
-            btn.innerHTML = `<span>Final Submit & Download Report</span>`;
+            document.getElementById('dbStatus').innerHTML = "❌ Database Load Failed (Check File Names)";
+            document.getElementById('dbStatus').style.color = "red";
         }
     };
 
-    function generatePDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        // Simple Header
-        doc.setFillColor(30, 58, 138); // Blue
-        doc.rect(0, 0, 210, 20, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(16);
-        doc.text("SANKET Analysis Report", 105, 13, { align: "center" });
-        
-        doc.setTextColor(0, 0, 0);
-        
-        // Trip Table
-        doc.autoTable({
-            html: '#tripInfo', // Note: You might need to build a hidden table for PDF if div parsing fails, or use explicit data
-            body: [
-                ['Train', inp.trainNo, 'Date', inp.journeyDate],
-                ['Loco', inp.locoNo, 'Section', inp.section],
-                ['CLI', inp.cliName, 'Crew', `${inp.lpName} / ${inp.alpName}`],
-                ['BFT', data.bftStatus, 'BPT', data.bptStatus]
-            ],
-            startY: 30,
-            theme: 'grid',
-            headStyles: { fillColor: [59, 130, 246] }
+    async function loadCSV(url, cb) {
+        return new Promise((resolve) => {
+            Papa.parse(url, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: (res) => { cb(res.data); resolve(); },
+                error: () => resolve() // Continue even if fail
+            });
         });
+    }
 
-        // Braking Table
-        doc.autoTable({
-            html: '#brakingTable',
-            startY: doc.lastAutoTable.finalY + 10,
-            theme: 'striped',
-            headStyles: { fillColor: [30, 58, 138] },
-            styles: { fontSize: 8 }
-        });
+    // 3. AUTO FILL FUNCTIONS
+    window.autoFillCLI = function() {
+        const id = document.getElementById('cliId').value.trim().toUpperCase();
+        const match = cliData.find(r => r['LI ID'] == id);
+        if(match) document.getElementById('cliName').value = match['NAME'];
+        else { alert('CLI ID Not Found'); document.getElementById('cliName').value = ''; }
+    };
 
-        // Remarks
-        let finalY = doc.lastAutoTable.finalY + 10;
-        doc.setFontSize(12);
-        doc.setTextColor(220, 38, 38); // Red
-        doc.text("CLI Observations & Remarks:", 14, finalY);
-        
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        const obsText = data.sheetPayload.recordRow['CLI Obs'];
-        const splitText = doc.splitTextToSize(obsText, 180);
-        doc.text(splitText, 14, finalY + 7);
+    window.autoFillLP = function() { fillCrew('lp'); };
+    window.autoFillALP = function() { fillCrew('alp'); };
 
-        doc.save(`${inp.trainNo}_${inp.journeyDate}_Report.pdf`);
-        
-        const btn = document.getElementById('btnFinalSubmit');
-        btn.innerHTML = `<span>✅ Saved & Downloaded</span>`;
-        btn.style.background = "#10b981";
+    function fillCrew(type) {
+        const id = document.getElementById(type+'Id').value.trim().toUpperCase();
+        const match = crewData.find(r => r['CREWID'] == id);
+        if(match) {
+            document.getElementById(type+'Name').value = match['CREW NAME'];
+            document.getElementById(type+'Desg').value = match['DESG'] || '';
+            document.getElementById(type+'GroupCli').value = match['CLI NAME'] || '';
+            document.getElementById(type+'Cug').value = match['CUG NUMBER'] || '';
+        } else {
+            alert(type.toUpperCase() + ' ID Not Found');
+        }
+    }
+
+    // 4. START ANALYSIS
+    window.startAnalysis = async function() {
+        const file = document.getElementById('spmFile').files[0];
+        if(!file) { alert("Please upload file"); return; }
+
+        const inputs = {
+            trainNo: document.getElementById('trainNo').value,
+            journeyDate: document.getElementById('journeyDate').value,
+            locoNo: document.getElementById('locoNo').value,
+            trainLoad: document.getElementById('trainLoad').value,
+            cliName: document.getElementById('cliName').value,
+            
+            lpId: document.getElementById('lpId').value,
+            lpName: document.getElementById('lpName').value,
+            lpDesg: document.getElementById('lpDesg').value,
+            lpGroupCli: document.getElementById('lpGroupCli').value,
+            lpCug: document.getElementById('lpCug').value,
+
+            alpId: document.getElementById('alpId').value,
+            alpName: document.getElementById('alpName').value,
+            alpDesg: document.getElementById('alpDesg').value,
+            alpGroupCli: document.getElementById('alpGroupCli').value,
+            alpCug: document.getElementById('alpCug').value,
+
+            rakeType: document.getElementById('rakeType').value,
+            mps: document.getElementById('mps').value,
+            section: document.getElementById('section').value,
+            
+            analysisTime: new Date().toLocaleString()
+        };
+
+        try {
+            const result = await processRTISData(file, inputs);
+            localStorage.setItem('spmAnalysisResult', JSON.stringify(result));
+            window.location.href = 'report.html';
+        } catch(e) {
+            alert("Error: " + e.message);
+        }
+    }
+    
+    window.checkDuplicateEntry = async function() {
+        const t = document.getElementById('trainNo').value;
+        const d = document.getElementById('journeyDate').value;
+        if(t && d && window.checkForDuplicateInBank) await window.checkForDuplicateInBank(t,d);
     }
 </script>
-
 </body>
 </html>
