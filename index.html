@@ -851,40 +851,6 @@ input:checked + .slider:before {
                 </div>
             </div>
         </form>
-         <div class="about-us-toggle-container">
-        <div class="about-us-icon" id="aboutUsToggle">i</div>
-       <div class="about-us-modal" id="aboutUsModal">
-    <h2>About E-GARUD ई गरुड़</h2>
-    <p>
-        <b>E-GARUD ई गरुड़</b> (CREW FOOTPLATE ACTIVITY MONITORING SYSTEM) is a sophisticated web application engineered to revolutionize the analysis of locomotive data recorder (SPM) files. Spearheaded by the Electrical (OP) department of SECR, Bilaspur, this tool automates the meticulous process of monitoring train operations, evaluating crew performance, and ensuring safety compliance.
-    </p>
-
-    <h3>Key Features</h3>
-    <ul>
-        <li><b>Universal SPM Compatibility:</b> Seamlessly processes data from a wide array of SPM systems, including Laxven, Medha, Telpro, MR, VEL, and RTIS.</li>
-        <li><b>Intelligent Anomaly Detection:</b> Automatically identifies and reports critical operational anomalies like overspeeding, wheel slip, and improper brake application.</li>
-        <li><b>Advanced Data Visualization:</b> Renders complex data into intuitive, interactive charts for clear interpretation of locomotive performance.</li>
-        <li><b>Automated Reporting & Logging:</b> Instantly generates comprehensive PDF reports and logs all findings to a centralized Google Sheet for robust record-keeping and trend analysis.</li>
-    </ul>
-
-    <div class="contributor-card">
-        <h3>The Development Team</h3>
-        
-        <h4>Visionary & Motivational Support</h4>
-        <p><b>Shri Masud Alam, Sr. DEE/OP/BSP</b><br>Provided the essential leadership and encouragement that propelled this project from concept to reality.</p>
-        
-        <h4 style="margin-top:15px;">Technical & Domain Expertise</h4>
-        <p><b>Shri N Ravichandran, CLI/BSP</b><br>Offered invaluable expert guidance on locomotive operations and data interpretation, ensuring the tool's accuracy and relevance.</p>
-        
-        <h4 style="margin-top:15px;">Strategic Guidance & Mentorship</h4>
-        <p><b>Shri Rajeev Soni, ADEE/OP/BSP</b><br>His strategic insights and dedicated mentorship were pivotal in navigating project challenges and shaping the tool's successful development.</p>
-
-        <h4 style="margin-top:15px;">Lead Developer & Architect</h4>
-        <p><b>Shri Mohammad Rustam Khan, Sr. ALP/BSP</b><br>Masterminded the core architecture, coding, and web design, transforming complex requirements into a functional and user-friendly application.</p>
-
-        <h4 style="margin-top:15px;">Data Management & Curation</h4>
-        <p><b>Shri Chandan Shah, Sr. ALP/BSP</b><br><b>Shri Rupesh Kumar Verma, TECH-1/BSP</b><br>Instrumental in arranging, structuring, and validating the vast datasets required for the tool's backend logic.</p>
-    </div>
 </div>
     </div>
     <canvas id="speedChart" style="display: none;"></canvas>
@@ -1527,25 +1493,6 @@ input:checked + .slider:before {
             alert('Failed to load CREW.csv or Station_Signal_Interdistant.csv. Ensure the files are available and correctly formatted.');
             document.getElementById('loadingOverlay').style.display = 'none';
         }
-    });
-
-    // This script should be at the end of the body
-    document.addEventListener('DOMContentLoaded', function() {
-        const aboutUsToggle = document.getElementById('aboutUsToggle');
-        const aboutUsModal = document.getElementById('aboutUsModal');
-
-        if (aboutUsToggle) {
-            aboutUsToggle.addEventListener('click', function() {
-                aboutUsModal.classList.toggle('show');
-            });
-        }
-
-        // Close the modal if the user clicks anywhere outside of the modal content and the icon
-        window.addEventListener('click', function(event) {
-            if (!aboutUsModal.contains(event.target) && !aboutUsToggle.contains(event.target)) {
-                aboutUsModal.classList.remove('show');
-            }
-        });
     });
     
     function showToast(message) {
