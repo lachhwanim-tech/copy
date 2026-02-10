@@ -1451,7 +1451,35 @@ input:checked + .slider:before {
             toast.addEventListener('transitionend', () => toast.remove());
         }, 4000);
     }
+// --- TRAIN LOAD VISIBILITY LOGIC (Sirf GOODS ke liye dikhega) ---
+    const rakeTypeSelect = document.getElementById('rakeType');
+    const trainLoadSelect = document.getElementById('trainLoad');
+    
+    // Check if elements exist to avoid errors
+    if (rakeTypeSelect && trainLoadSelect) {
+        const trainLoadGroup = trainLoadSelect.closest('.form-group'); // Pura box select karne ke liye
 
+        function toggleTrainLoad() {
+            const selectedRake = rakeTypeSelect.value;
+            
+            // Agar GOODS hai tabhi dikhao
+            if (selectedRake === 'GOODS') {
+                trainLoadGroup.style.display = 'block'; // Show
+                trainLoadSelect.setAttribute('required', 'true'); // Jaruri hai
+            } else {
+                trainLoadGroup.style.display = 'none'; // Hide
+                trainLoadSelect.removeAttribute('required'); // Jaruri nahi hai
+                trainLoadSelect.value = ""; // Value clear kar do
+            }
+        }
+
+        // Jab bhi Rake Type badle, check karo
+        rakeTypeSelect.addEventListener('change', toggleTrainLoad);
+        
+        // Page load hone par bhi check karo (taki pehle se sahi dikhe)
+        toggleTrainLoad();
+    }
+    // ---------------------------------------------------------------
     // Aapka baaki ka Javascript code yahan se shuru hoga...
     window.toggleLoadingOverlay = function(show) {
          document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
