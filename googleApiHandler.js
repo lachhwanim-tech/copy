@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfdaZ8frpNrrDxeDJ1X1uTEIHH0yZuYFeyulj7x5LAKtDxYJuW8eBvAcRE9WsvPy7f/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIOYypAaTaqHpN0Q05Zux7hOQLR70kbjqutyOQitHp4XpVXbIXD3CAbuCNAXr3btt5/exec';
 
 /**
  * Converts a file to a Base64 string.
