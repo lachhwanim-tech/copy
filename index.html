@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SANKET - SPM Analysis Tool</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -17,35 +18,36 @@
     <style>
         :root {
             --primary-color: #2c3e50;
-            --secondary-color: #34495e;
             --accent-color: #3498db;
-            --text-light: #ecf0f1;
-            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --success-color: #27ae60;
+            --error-color: #c0392b;
+            --bg-color: #f4f7f6;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: var(--shadow); }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
-        .header h1 { margin: 0; color: var(--primary-color); }
-        .header p { color: #7f8c8d; }
-        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: var(--secondary-color); }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 5px; font-size: 14px; }
-        
-        .full-width { grid-column: span 2; }
-        
-        .btn-primary { 
-            background: var(--accent-color); color: white; border: none; padding: 15px 30px; 
-            font-size: 16px; border-radius: 5px; cursor: pointer; width: 100%; transition: 0.3s;
-        }
-        .btn-primary:hover { background: #2980b9; }
-        .btn-primary:disabled { background: #95a5a6; cursor: not-allowed; }
 
-        .file-upload { border: 2px dashed #bdc3c7; padding: 20px; text-align: center; border-radius: 5px; background: #f9f9f9; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         
-        /* Loading Overlay */
-        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .header h1 { margin: 0; color: var(--primary-color); }
+        .header p { color: #7f8c8d; margin-top: 5px; }
+
+        #dbStatus { text-align: center; font-size: 13px; margin-bottom: 20px; padding: 8px; border-radius: 4px; background: #eee; font-weight: bold; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .section-header { grid-column: span 2; font-size: 1.1rem; font-weight: bold; color: var(--accent-color); margin-top: 15px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: #555; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        .form-group input[readonly] { background-color: #f9f9f9; color: #777; cursor: not-allowed; }
+
+        .file-upload-area { grid-column: span 2; border: 2px dashed #bdc3c7; padding: 20px; text-align: center; background: #fafafa; margin-top: 10px; border-radius: 8px; }
+        
+        .btn-analyze { grid-column: span 2; background: var(--accent-color); color: white; border: none; padding: 15px; font-size: 18px; border-radius: 8px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        .btn-analyze:hover { background: #2980b9; }
+
+        /* Spinner */
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--accent-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -55,27 +57,73 @@
 <div class="container">
     <div class="header">
         <h1>SANKET</h1>
-        <p>SPM Analysis and Navigation KPA Extraction Tool</p>
+        <p>SPM Analysis & Navigation KPA Extraction Tool</p>
     </div>
 
+    <div id="dbStatus">Loading Database...</div>
+
     <div class="form-grid">
+        
+        <div class="section-header">Trip Details</div>
+        
         <div class="form-group">
             <label>Train No</label>
             <input type="text" id="trainNo" placeholder="e.g. 12810" onblur="checkDuplicateEntry()">
         </div>
+
         <div class="form-group">
             <label>Journey Date</label>
-            <input type="date" id="journeyDate">
+            <input type="date" id="journeyDate" onblur="checkDuplicateEntry()">
         </div>
-        
+
         <div class="form-group">
             <label>Loco No</label>
             <input type="text" id="locoNo" placeholder="e.g. 30201">
         </div>
+
+        <div class="form-group">
+            <label>Train Load</label>
+            <select id="trainLoad">
+                <option value="LOAD">LOADED</option>
+                <option value="EMPTY">EMPTY</option>
+            </select>
+        </div>
+
+        <div class="section-header">CLI Details</div>
+
+        <div class="form-group">
+            <label>Analysis CLI ID</label>
+            <input type="text" id="cliId" placeholder="Enter CLI ID (e.g. BSP0187)" onblur="autoFillCLI()">
+        </div>
+
         <div class="form-group">
             <label>CLI Name</label>
-            <input type="text" id="cliName" placeholder="Enter CLI Name">
+            <input type="text" id="cliName" readonly placeholder="Auto-filled">
         </div>
+
+        <div class="section-header">Crew Details</div>
+
+        <div class="form-group">
+            <label>LP ID</label>
+            <input type="text" id="lpId" placeholder="Enter LP ID" onblur="autoFillLP()">
+        </div>
+        <div class="form-group">
+            <label>LP Name</label>
+            <input type="text" id="lpName" readonly>
+        </div>
+        <input type="hidden" id="lpGroupCli">
+
+        <div class="form-group">
+            <label>ALP ID</label>
+            <input type="text" id="alpId" placeholder="Enter ALP ID" onblur="autoFillALP()">
+        </div>
+        <div class="form-group">
+            <label>ALP Name</label>
+            <input type="text" id="alpName" readonly>
+        </div>
+        <input type="hidden" id="alpGroupCli">
+
+        <div class="section-header">Technical Parameters</div>
 
         <div class="form-group">
             <label>From Station</label>
@@ -87,24 +135,6 @@
         </div>
 
         <div class="form-group">
-            <label>LP ID</label>
-            <input type="text" id="lpId">
-        </div>
-        <div class="form-group">
-            <label>LP Name</label>
-            <input type="text" id="lpName">
-        </div>
-        
-        <div class="form-group">
-            <label>ALP ID</label>
-            <input type="text" id="alpId">
-        </div>
-        <div class="form-group">
-            <label>ALP Name</label>
-            <input type="text" id="alpName">
-        </div>
-
-        <div class="form-group">
             <label>Rake Type</label>
             <select id="rakeType">
                 <option value="GOODS">GOODS (Freight)</option>
@@ -112,55 +142,168 @@
                 <option value="MEMU">MEMU</option>
             </select>
         </div>
-        
-        <div class="form-group">
-            <label>Train Load</label>
-            <select id="trainLoad">
-                <option value="LOAD">LOADED</option>
-                <option value="EMPTY">EMPTY</option>
-            </select>
-        </div>
 
         <div class="form-group">
             <label>MPS (Max Speed)</label>
             <input type="number" id="mps" value="110">
         </div>
-        <div class="form-group">
+        
+        <div class="form-group" style="grid-column: span 2;">
             <label>Section</label>
             <input type="text" id="section" value="NGP-BSP">
         </div>
 
-        <div class="form-group full-width file-upload">
-            <label>Upload SPM/RTIS File (.csv, .xlsx)</label>
-            <input type="file" id="spmFile" accept=".csv, .xlsx">
-        </div>
-        
-        <div class="form-group full-width file-upload">
-            <label>Upload Crew Voice/CUG Data (Optional)</label>
-            <input type="file" id="cugFile" accept=".csv, .xlsx">
+        <div class="file-upload-area">
+            <label style="font-weight:bold;">Upload SPM/RTIS File (.csv, .xlsx)</label><br>
+            <input type="file" id="spmFile" accept=".csv, .xlsx" style="margin-top:10px;">
+            <br><br>
+            <label style="font-weight:bold;">Upload CUG/Voice File (Optional)</label><br>
+            <input type="file" id="cugFile" accept=".csv, .xlsx" style="margin-top:10px;">
         </div>
 
-        <button class="btn-primary full-width" id="analyzeBtn" onclick="startAnalysis()">Analyze Data</button>
+        <button class="btn-analyze" id="analyzeBtn" onclick="startAnalysis()">Analyze Data</button>
     </div>
 </div>
 
 <div id="loadingOverlay">
     <div class="spinner"></div>
-    <h3 id="loadingText">Processing Data...</h3>
+    <h3 id="loadingText" style="margin-top:20px;">Processing Data...</h3>
 </div>
 
 <script>
-    // Placeholder for Duplicate Check - Logic will be in googlesheet.js
-    async function checkDuplicateEntry() {
+    // ==========================================================
+    // 1. CONFIGURATION (RELATIVE PATHS)
+    // ==========================================================
+    // Since index.html and CSVs are in the same folder, we use filenames directly.
+    const MASTER_FILES = {
+        CREW: "./CREW.csv",
+        CLI: "./CLIMICRO.csv",
+        STATION: "./Station_Signal_Interdistant.csv"
+    };
+
+    let crewData = [];
+    let cliData = [];
+    window.stationData = [];
+    let dbStatusDiv = document.getElementById('dbStatus');
+
+    // ==========================================================
+    // 2. LOAD CSV DATA ON STARTUP
+    // ==========================================================
+    window.onload = async function() {
+        console.log("Loading Local Database...");
+        dbStatusDiv.innerHTML = "Reading Database Files...";
+        dbStatusDiv.style.background = "#fff3cd";
+
+        try {
+            await Promise.all([
+                loadCSV(MASTER_FILES.CREW, (data) => crewData = data),
+                loadCSV(MASTER_FILES.CLI, (data) => cliData = data),
+                loadCSV(MASTER_FILES.STATION, (data) => window.stationData = data)
+            ]);
+            
+            dbStatusDiv.innerHTML = "✅ Database Ready (Connected)";
+            dbStatusDiv.style.background = "#d4edda";
+            dbStatusDiv.style.color = "#155724";
+        } catch (error) {
+            console.error(error);
+            dbStatusDiv.innerHTML = "⚠️ Database Load Warning: Are CSV files in the same folder?";
+            dbStatusDiv.style.background = "#f8d7da";
+        }
+    };
+
+    async function loadCSV(url, callback) {
+        return new Promise((resolve, reject) => {
+            Papa.parse(url, {
+                download: true, // This enables fetching from URL/Path
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        callback(results.data);
+                        resolve();
+                    } else {
+                        reject("Empty File: " + url);
+                    }
+                },
+                error: function(err) {
+                    // Fail silently or log, but allow app to open
+                    console.warn("Could not load " + url);
+                    reject(err);
+                }
+            });
+        });
+    }
+
+    // ==========================================================
+    // 3. AUTO-FILL LOGIC (EXACT OLD BEHAVIOR)
+    // ==========================================================
+
+    // CLI ID -> NAME
+    window.autoFillCLI = function() {
+        const idBox = document.getElementById('cliId');
+        const nameBox = document.getElementById('cliName');
+        const id = idBox.value.trim().toUpperCase();
+
+        if (!id) return;
+        if (cliData.length === 0) { console.warn("DB not ready"); return; }
+
+        const match = cliData.find(row => row['LI ID'] && row['LI ID'].toString().toUpperCase() === id);
+
+        if (match) {
+            nameBox.value = match['NAME'];
+            idBox.style.borderColor = "green";
+        } else {
+            alert("CLI ID Not Found!");
+            nameBox.value = "";
+            idBox.style.borderColor = "red";
+        }
+    };
+
+    // LP ID -> NAME & GROUP CLI
+    window.autoFillLP = function() { fillCrewDetails('lp'); };
+    // ALP ID -> NAME & GROUP CLI
+    window.autoFillALP = function() { fillCrewDetails('alp'); };
+
+    function fillCrewDetails(type) {
+        const idBox = document.getElementById(type + 'Id');
+        const nameBox = document.getElementById(type + 'Name');
+        const groupCliBox = document.getElementById(type + 'GroupCli');
+        
+        const id = idBox.value.trim().toUpperCase();
+
+        if (!id) return;
+        if (crewData.length === 0) { console.warn("DB not ready"); return; }
+
+        const match = crewData.find(row => row['CREWID'] && row['CREWID'].toString().toUpperCase() === id);
+
+        if (match) {
+            nameBox.value = match['CREW NAME'];
+            groupCliBox.value = match['CLI NAME']; // Auto-fill Hidden Field
+            idBox.style.borderColor = "green";
+        } else {
+            alert(type.toUpperCase() + " ID Not Found!");
+            nameBox.value = "";
+            groupCliBox.value = "";
+            idBox.style.borderColor = "red";
+        }
+    }
+
+    // ==========================================================
+    // 4. DUPLICATE CHECK (Via googlesheet.js)
+    // ==========================================================
+    window.checkDuplicateEntry = async function() {
         const trainNo = document.getElementById('trainNo').value;
         const jDate = document.getElementById('journeyDate').value;
+        
         if(trainNo && jDate && window.checkForDuplicateInBank) {
             await window.checkForDuplicateInBank(trainNo, jDate);
         }
     }
 
-    async function startAnalysis() {
-        // Validation
+    // ==========================================================
+    // 5. ANALYSIS & REDIRECT
+    // ==========================================================
+    window.startAnalysis = async function() {
         const fileInput = document.getElementById('spmFile');
         if (!fileInput.files.length) {
             alert("Please upload an SPM/RTIS file.");
@@ -169,39 +312,44 @@
 
         document.getElementById('loadingOverlay').style.display = 'flex';
         
-        // 1. Gather Inputs
         const inputs = {
             trainNo: document.getElementById('trainNo').value,
             locoNo: document.getElementById('locoNo').value,
             journeyDate: document.getElementById('journeyDate').value,
+            cliId: document.getElementById('cliId').value,
             cliName: document.getElementById('cliName').value,
             fromStn: document.getElementById('fromStn').value,
             toStn: document.getElementById('toStn').value,
             lpId: document.getElementById('lpId').value,
             lpName: document.getElementById('lpName').value,
+            lpGroupCli: document.getElementById('lpGroupCli').value,
             alpId: document.getElementById('alpId').value,
             alpName: document.getElementById('alpName').value,
+            alpGroupCli: document.getElementById('alpGroupCli').value,
             rakeType: document.getElementById('rakeType').value,
-            trainLoad: document.getElementById('trainLoad').value, // NEW
+            trainLoad: document.getElementById('trainLoad').value,
             mps: document.getElementById('mps').value,
             section: document.getElementById('section').value
         };
 
         try {
-            // 2. Process Data (Calls RTIS.js function)
+            // Check if RTIS.js logic is loaded
+            if (typeof processRTISData !== 'function') {
+                 throw new Error("RTIS.js not loaded.");
+            }
+
             const result = await processRTISData(fileInput.files[0], inputs);
             
-            // 3. Save to LocalStorage for Report Page
             localStorage.setItem('spmAnalysisResult', JSON.stringify(result));
-            
-            // 4. Redirect
             window.location.href = 'report.html';
+            
         } catch (error) {
             console.error(error);
-            alert("Error analyzing file: " + error.message);
+            alert("Error: " + error.message);
             document.getElementById('loadingOverlay').style.display = 'none';
         }
     }
 </script>
+
 </body>
 </html>
