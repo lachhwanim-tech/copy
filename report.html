@@ -2,140 +2,177 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Detailed Analysis Report</title>
+    <title>SANKET Report</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="googlesheet.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #555; }
-        .paper { background: white; max-width: 210mm; margin: 0 auto; padding: 10mm; min-height: 297mm; }
-        h1, h2 { text-align: center; color: #000; }
-        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
-        th, td { border: 1px solid black; padding: 4px; text-align: center; }
-        th { background: #eee; }
-        .btn { display: block; width: 100%; padding: 20px; font-size: 20px; background: green; color: white; cursor: pointer; margin-bottom: 20px;}
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #eee; }
+        .card { background: white; max-width: 600px; margin: 0 auto; padding: 30px; border-radius: 10px; }
+        .btn { padding: 15px 30px; background: #007bff; color: white; border: none; font-size: 18px; cursor: pointer; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <button class="btn" onclick="generateLongReport()">DOWNLOAD FULL PDF REPORT (8-10 PAGES)</button>
-
-    <div class="paper" id="previewArea">
-        <h1>SANKET ANALYSIS REPORT</h1>
-        <div id="loading">Loading Data...</div>
+<div class="card">
+    <h2>Ready to Generate Report</h2>
+    <p>All analysis completed. Click below to save PDF and submit to Bank.</p>
+    
+    <div id="remarksArea" style="text-align:left; margin-bottom:20px;">
+        <label><strong>Any Remarks (CLI Obs)?</strong></label><br>
+        <textarea id="cliRemarks" rows="4" style="width:100%;">System Analysis OK.</textarea>
     </div>
+
+    <button class="btn" id="submitBtn" onclick="submitAndDownload()">Generate 9-Page Report</button>
+</div>
 
 <script>
     const data = JSON.parse(localStorage.getItem('spmAnalysisResult'));
     const inp = data.inputs;
-    
-    // Preview Logic (Just showing summary on screen, real magic is in PDF)
-    document.getElementById('loading').innerHTML = `
-        <p><strong>Train:</strong> ${inp.trainNo} | <strong>Date:</strong> ${inp.journeyDate} | <strong>CLI:</strong> ${inp.cliName}</p>
-        <p><strong>Total Stops Found:</strong> ${data.stops.length}</p>
-        <p><em>Click the Green Button to download the full detailed report.</em></p>
-    `;
 
-    async function generateLongReport() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4'); // Portrait, A4
+    async function submitAndDownload() {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.innerText = "Processing...";
+
+        // 1. Prepare Data for Sheet
+        const recordRow = {
+            "DateTime": new Date().toLocaleString(),
+            "Time": new Date().toLocaleTimeString(),
+            "CLI Name": inp.cliName,
+            "Journey Date": inp.journeyDate,
+            "Train No": inp.trainNo,
+            "Loco No": inp.locoNo,
+            "From Stn": inp.fromStn || "",
+            "To Stn": inp.toStn || "",
+            "Rake Type": inp.rakeType,
+            "MPS": inp.mps,
+            "Section": inp.section,
+            "LP ID": inp.lpId,
+            "LP Name": inp.lpName,
+            "LP Group CLI": inp.lpGroupCli,
+            "ALP ID": inp.alpId,
+            "ALP Name": inp.alpName,
+            "ALP Group CLI": inp.alpGroupCli,
+            "BFT Status": data.bftStatus,
+            "BPT Status": data.bptStatus,
+            "Overspeed Count": data.overspeedCount,
+            "Total Dist": data.totalDist,
+            "Avg Speed": data.avgSpeed,
+            "Max Speed": data.maxSpeed,
+            "CLI Obs": document.getElementById('cliRemarks').value,
+            "Action Taken": "Nil",
+            "BFT Not Done": data.bftStatus !== "PASS" ? "Yes" : "No",
+            "BPT Not Done": data.bptStatus !== "PASS" ? "Yes" : "No",
+            "BFT Rule": "Yes",
+            "BPT Rule": "Yes",
+            "Late Ctrl": "No",
+            "Overspeed": data.overspeedCount > 0 ? "Yes" : "No",
+            "Other": "",
+            "Total Abn": data.overspeedCount, // Simplified
+            "Spare": "",
+            "UNIQUE_TRIP_ID": data.uniqueTripId
+        };
         
-        // --- PAGE 1: HEADER & SUMMARY ---
-        doc.setFontSize(18);
-        doc.text("SANKET - SPM ANALYSIS REPORT", 105, 15, { align: "center" });
-        
-        doc.setFontSize(10);
-        const summaryData = [
-            ["Train No", inp.trainNo, "Journey Date", inp.journeyDate],
-            ["Loco No", inp.locoNo, "Section", inp.section],
-            ["CLI Name", inp.cliName, "HQ", "SECR"], // Hardcoded for now
-            ["LP Name", inp.lpName, "ALP Name", inp.alpName],
-            ["Load", inp.trainLoad, "Rake Type", inp.rakeType],
-            ["MPS", inp.mps, "Max Speed", data.summary.maxSpeed],
-            ["BFT Status", data.bft.status, "BPT Status", data.bpt.status]
-        ];
+        // 2. Prepare Braking Data (Detailed)
+        const brakingRows = data.stops.map(s => ({
+            "Date": inp.journeyDate,
+            "Train No": inp.trainNo,
+            "LP ID": inp.lpId,
+            "LP Name": inp.lpName,
+            "Location": s.loc,
+            "KM": s.dist,
+            "Spd 2000m": s.speeds[2000],
+            "Spd 1000m": s.speeds[1000],
+            "Spd 800m": s.speeds[800],
+            "Spd 600m": s.speeds[600],
+            "Spd 500m": s.speeds[500],
+            "Spd 400m": s.speeds[400],
+            "Spd 300m": s.speeds[300],
+            "Spd 100m": s.speeds[100],
+            "Spd 50m": s.speeds[50],
+            "Spd 20m": s.speeds[20],
+            "Spd 0m": s.speeds[0],
+            "Analysis": s.result,
+            "Remark": s.remark,
+            "UNIQUE_TRIP_ID": data.uniqueTripId
+        }));
 
-        doc.autoTable({
-            startY: 25,
-            head: [['Parameter', 'Value', 'Parameter', 'Value']],
-            body: summaryData,
-            theme: 'grid',
-            headStyles: { fillColor: [40, 40, 40] }
-        });
-
-        // --- PAGE 1 (Cont.): BFT/BPT DETAILS ---
-        doc.text("1. Brake Test Analysis", 14, doc.lastAutoTable.finalY + 10);
-        
-        const testData = [
-            ["Test", "Status", "Start Time", "End Time", "Start Spd", "End Spd", "Drop", "Result"],
-            ["BFT", data.bft.status, data.bft.startTime||"-", data.bft.endTime||"-", data.bft.startSpeed||0, data.bft.endSpeed||0, data.bft.drop||0, data.bft.status],
-            ["BPT", data.bpt.status, "-", "-", "-", "-", "-", data.bpt.status]
-        ];
-
-        doc.autoTable({
-            startY: doc.lastAutoTable.finalY + 12,
-            head: [['Test', 'Status', 'Start Time', 'End Time', 'Start Spd', 'End Spd', 'Drop', 'Result']],
-            body: testData.slice(1), // Remove header from data array
-            theme: 'grid'
-        });
-
-        // --- PAGE 2 to N: DETAILED BRAKING ANALYSIS (The 10 Page part) ---
-        doc.text("2. Detailed Braking & Stop Analysis", 14, doc.lastAutoTable.finalY + 10);
-        
-        // Prepare HUGE Array
-        const brakingRows = data.stops.map(stop => [
-            stop.sNo,
-            stop.loc,
-            stop.time.split(' ')[1], // Just Time
-            stop.speeds[2000],
-            stop.speeds[1000],
-            stop.speeds[500],
-            stop.speeds[100],
-            stop.speeds[50],
-            stop.speeds[0],
-            stop.result,
-            stop.remark
-        ]);
-
-        doc.autoTable({
-            startY: doc.lastAutoTable.finalY + 12,
-            head: [['S.No', 'Location', 'Time', '2000m', '1000m', '500m', '100m', '50m', '0m', 'Analysis', 'Rem']],
-            body: brakingRows,
-            theme: 'grid',
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [0, 50, 150] },
-            // This allows the table to split across multiple pages automatically
-            pageBreak: 'auto' 
-        });
-
-        // --- FINAL PAGE: ABNORMALITIES & SIGN ---
-        let finalY = doc.lastAutoTable.finalY + 20;
-        
-        // Check if we need a new page
-        if (finalY > 250) {
-            doc.addPage();
-            finalY = 20;
+        // 3. Send to Google Sheet
+        try {
+            if(window.sendToGoogleSheet) {
+                await window.sendToGoogleSheet({ recordRow, brakingRows });
+            }
+            // 4. Generate PDF
+            generatePDF();
+            btn.innerText = "Done!";
+        } catch(e) {
+            alert("Submission Failed");
+            btn.disabled = false;
         }
+    }
 
-        doc.setFontSize(12);
-        doc.text("3. Abnormalities & Remarks", 14, finalY);
-        
-        // Fetch Remarks from Logic (Assuming passed in data)
-        const remarks = [];
-        if(data.bft.status !== "PASS") remarks.push("1. BFT Not Done / Failed");
-        if(data.summary.overspeedCount > 0) remarks.push(`2. Overspeeding detected ${data.summary.overspeedCount} times.`);
-        
-        doc.setFontSize(10);
-        doc.text(remarks.length ? remarks.join("\n") : "System Analysis: NIL Abnormalities", 14, finalY + 10);
+    function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const addTitle = (t) => {
+            doc.setFillColor(41, 128, 185); doc.rect(0,0,210,20,'F');
+            doc.setTextColor(255); doc.setFontSize(16); doc.text(t, 105, 13, {align:'center'});
+            doc.setTextColor(0); doc.setFontSize(10);
+        };
 
-        // Signatures
-        doc.text("_________________", 20, finalY + 50);
-        doc.text("Sig LP", 25, finalY + 55);
-        
-        doc.text("_________________", 150, finalY + 50);
-        doc.text("Sig CLI", 155, finalY + 55);
+        // PAGE 1: TRAIN
+        addTitle("PAGE 1: TRAIN DETAILS");
+        doc.autoTable({ startY: 40, body: [
+            ["Train", inp.trainNo], ["Loco", inp.locoNo], ["Rake", inp.rakeType],
+            ["Section", inp.section], ["CLI", inp.cliName], ["Date", inp.journeyDate]
+        ]});
 
-        // Save
-        doc.save(`${inp.trainNo}_Detailed_Report.pdf`);
+        // PAGE 2: CREW
+        doc.addPage(); addTitle("PAGE 2: CREW DETAILS");
+        doc.text("LP Details", 14, 30);
+        doc.autoTable({ startY: 35, body: [
+            ["ID", inp.lpId], ["Name", inp.lpName], ["Desg", inp.lpDesg], 
+            ["Group CLI", inp.lpGroupCli], ["CUG", inp.lpCug]
+        ]});
+        doc.text("ALP Details", 14, doc.lastAutoTable.finalY+10);
+        doc.autoTable({ startY: doc.lastAutoTable.finalY+15, body: [
+            ["ID", inp.alpId], ["Name", inp.alpName], ["Desg", inp.alpDesg],
+            ["Group CLI", inp.alpGroupCli], ["CUG", inp.alpCug]
+        ]});
+
+        // PAGE 3: BRAKE TEST
+        doc.addPage(); addTitle("PAGE 3: BRAKE TESTS");
+        doc.autoTable({ startY: 40, head:[['Test','Status']], body: [
+            ["BFT", data.bftStatus], ["BPT", data.bptStatus]
+        ]});
+
+        // PAGE 4: STOP TABLE
+        doc.addPage(); addTitle("PAGE 4: SYSTEM GENERATED STOPS");
+        const rows = data.stops.map((s,i) => [i+1, s.loc, s.time, s.dist, s.speeds[2000], s.speeds[1000], s.speeds[500], s.speeds[100], s.speeds[0]]);
+        doc.autoTable({ startY: 30, head:[['Sr','Loc','Time','KM','2000','1000','500','100','0']], body: rows, styles:{fontSize:8} });
+
+        // PAGE 5, 6, 7: GRAPHS (Placeholders)
+        doc.addPage(); addTitle("PAGE 5: STOP GRAPH"); doc.text("Graph requires visual capture...", 14, 50);
+        doc.addPage(); addTitle("PAGE 6: STATION TIMINGS"); doc.text("Station Timings...", 14, 50);
+        doc.addPage(); addTitle("PAGE 7: JOURNEY GRAPH"); doc.text("Full Graph...", 14, 50);
+
+        // PAGE 8: SPEED SUMMARY
+        doc.addPage(); addTitle("PAGE 8: SPEED SUMMARY");
+        const summ = data.speedSummary;
+        const total = parseFloat(data.totalDist);
+        doc.autoTable({ startY: 40, head:[['Range','Dist',' %']], body:[
+            ["MPS", summ.atMps.toFixed(2), ((summ.atMps/total)*100).toFixed(1)+"%"],
+            [">80", summ.above80.toFixed(2), ((summ.above80/total)*100).toFixed(1)+"%"],
+            ["60-75", summ.r60_75.toFixed(2), ((summ.r60_75/total)*100).toFixed(1)+"%"],
+            ["<40", summ.below40.toFixed(2), ((summ.below40/total)*100).toFixed(1)+"%"]
+        ]});
+
+        // PAGE 9: REMARKS
+        doc.addPage(); addTitle("PAGE 9: REMARKS");
+        doc.text("Observations:", 14, 40);
+        doc.text(document.getElementById('cliRemarks').value, 14, 50);
+
+        doc.save(inp.trainNo+"_Full_Report.pdf");
     }
 </script>
 </body>
