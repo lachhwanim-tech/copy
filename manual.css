@@ -1,0 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    font-family: 'Poppins', 'Segoe UI', 'Roboto', Arial, sans-serif;
+    color: #333;
+    line-height: 1.7;
+    margin: 0;
+    padding: 20px;
+    /* --- नया रंगीन एनिमेटेड बैकग्राउंड --- */
+    background: linear-gradient(315deg, #7f53ac, #647dee, #ff7e5f, #feb47b);
+    background-size: 400% 400%;
+    animation: GradientFlow 18s ease infinite;
+}
+
+@keyframes GradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.manual-container {
+    max-width: 900px;
+    margin: 20px auto;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 25px 40px;
+    border-radius: 25px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.header {
+    text-align: center;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: transparent;
+    background: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.language-toggle button {
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    border-radius: 30px;
+    background-color: #fff;
+    color: #495057;
+    margin: 0 8px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.language-toggle button:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.language-toggle button.active {
+    background-image: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    box-shadow: 0 6px 15px rgba(37, 117, 252, 0.4);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.manual-content { display: none; }
+.manual-content.active { display: block; }
+
+/* --- नया और बेहतर एनिमेशन लॉजिक --- */
+.manual-section {
+    margin-bottom: 40px;
+    padding: 25px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    border-left: 7px solid; /* रंग जावास्क्रिप्ट से आएगा */
+    transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
+
+    /* प्रारंभिक अवस्था */
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.manual-section:hover {
+    transform: scale(1.03) !important; /* महत्वपूर्ण ताकि JS ओवरराइड न करे */
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+/* JS द्वारा जोड़ा जाने वाला क्लास */
+.manual-section.is-visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* अलग-अलग सेक्शन के लिए रंग */
+.color-intro { border-color: #2575fc; }
+.color-setup { border-color: #6a11cb; }
+.color-guide { border-color: #ff7e5f; }
+.color-report { border-color: #02aab0; }
+.color-final { border-color: #f472b6; }
+
+.color-intro h2 { color: #2575fc; }
+.color-setup h2 { color: #6a11cb; }
+.color-guide h2 { color: #ff7e5f; }
+.color-report h2 { color: #02aab0; }
+.color-final h2 { color: #f472b6; }
+
+/* --- कंटेंट के अंदर का एनिमेशन --- */
+.manual-section.is-visible > * {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: contentFadeUp 0.6s ease-out forwards;
+}
+
+/* कंटेंट के लिए अलग-अलग देरी */
+.manual-section.is-visible h2 { animation-delay: 0.2s; }
+.manual-section.is-visible p { animation-delay: 0.3s; }
+.manual-section.is-visible ul, .manual-section.is-visible ol { animation-delay: 0.4s; }
+.manual-section.is-visible li { animation-delay: 0.5s; }
+
+@keyframes contentFadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.back-button {
+    display: block;
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid rgba(0, 0, 0, 0.05);
+    text-decoration: none;
+    color: #007bff;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    color: #6a11cb;
+    transform: scale(1.05);
+}

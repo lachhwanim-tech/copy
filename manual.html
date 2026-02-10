@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANKET - User Manual</title>
+    <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+
+    <div class="manual-container">
+        <div class="header">
+            <h1>SANKET User Manual / उपयोगकर्ता पुस्तिका</h1>
+            <div class="language-toggle">
+                <button id="en-btn" class="active">English</button>
+                <button id="hi-btn">हिंदी</button>
+            </div>
+        </div>
+
+        <div id="en-manual" class="manual-content active">
+            <div class="manual-section">
+                <h2>🧑‍🏫 1. Introduction</h2>
+                <p><strong>SANKET (SPM Analysis and Navigation KPA Extraction Tool)</strong> is a specialized web application engineered by the Electrical (OP) department, Bilaspur, S.E.C. Railway. Its core mission is to transform the time-consuming and complex task of analyzing locomotive Speed-Time-Distance-Event Recorder (SPM) data into a fast, automated, and standardized process.</p>
+                <p>The tool acts as an intelligent assistant for Chief Loco Inspectors (CLIs), ingesting raw data files and producing a comprehensive, multi-page analytical report. This report is not just a data dump; it's an organized evaluation of a Loco Pilot's performance against critical Key Performance Analysis (KPA).</p>
+            </div>
+
+            <div class="manual-section">
+                <h2>⚙️ 2. System Requirements & Setup</h2>
+                <p>Before starting, ensure you have the correct files available. SANKET's accuracy depends on the data you provide.</p>
+                <ul>
+                    <li><strong>SPM Data File (Mandatory):</strong> This is the primary raw data file from the locomotive's recorder. The required file format is strictly tied to the <strong>Type of SPM</strong> you select in the form:
+                        <ul>
+                            <li><strong>Laxven, Telpro:</strong> Require an <strong>Excel file</strong> (`.xlsx` or `.xls`).</li>
+                            <li><strong>RTIS:</strong> <strong style="color: blue;">Important Note!</strong> The raw data from RTIS is usually in a <code>.csv</code> file. You must open this file in Microsoft Excel and save it as an <strong>Excel Workbook (.xlsx)</strong> before uploading it to SANKET.</li>
+                            <li><strong>Medha:</strong> Requires a specific <strong>Text file</strong> (`.txt`).</li>
+                            <li><strong>MR, VEL:</strong> Require a <strong>PDF file</strong> (`.pdf`).</li>
+                        </ul>
+                        <strong style="color: red;">Note: Uploading the wrong file type for the selected SPM will result in an error.</strong>
+                    </li>
+                    <li><strong>CUG.csv File (Optional but Recommended):</strong> For analyzing crew mobile phone usage, you need a CUG call data report in `.csv` format.
+                        <ul>
+                            <li><strong>Purpose:</strong> This file allows SANKET to cross-reference call times with the train's movement data.</li>
+                            <li><strong>Required Columns:</strong> The file must contain headers like `CUG MOBILE NO`, `Start Date & Time`, `End Date & Time`, and `Duration in Sec`.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="manual-section">
+                <h2>3. Step-by-Step Analysis Guide</h2>
+                <p>Follow this detailed guide to generate an accurate report using the main form (`index.html`).</p>
+                <h4>Step 1: Fill Crew Details (LP & ALP)</h4>
+                <ol>
+                    <li><strong>Enter Crew ID:</strong> Type the Loco Pilot's (LP) ID into the <strong>LP ID</strong> field.</li>
+                    <li><strong>Automatic Data Fetching:</strong> SANKET will instantly look up this ID in the `CREW.csv` database. If a match is found, it will automatically populate the <strong>LP Name, Designation, Group CLI,</strong> and <strong>CUG Number</strong> fields. This ensures accuracy and saves time.</li>
+                    <li><strong>Manual Entry Mode:</strong> If an LP is new, transferred, or not yet in the database, the ID lookup will fail. In this case, click the <strong>MANUAL ENTRY MODE</strong> button. This will unlock the fields, allowing you to type the details manually.</li>
+                    <li><strong>Repeat for ALP:</strong> Follow the exact same procedure for the Assistant Loco Pilot (ALP).</li>
+                </ol>
+
+                <h4>Step 2: Fill Train & Section Details</h4>
+                <p>This section defines the context of the journey.</p>
+                 <ul>
+                    <li><strong>Loco & Train Number:</strong> Enter the specific locomotive and train numbers.</li>
+                    <li><strong>Type of Rake:</strong> Select <strong>GOODS, COACHING, or MEMU</strong>. This choice is <strong>critical</strong> as SANKET uses it to apply different analysis rules. For example, the speed thresholds for a 'Smooth' braking analysis are stricter for a GOODS train than for a COACHING train.</li>
+                    <li><strong>Max Permissible Speed (MPS):</strong> Select the official MPS for the route. SANKET uses this value as the baseline for its <strong>Overspeeding Violation</strong> analysis.</li>
+                    <li><strong>Section & Route:</strong> First, select the overall <strong>Section</strong> (e.g., BSP-RIG). This will dynamically load all relevant stations into the <strong>From Section</strong> and <strong>To Section</strong> dropdowns. Then, select the specific start and end stations for your analysis.</li>
+                </ul>
+
+                <h4>Step 3: Fill Analysis Details & Upload Files</h4>
+                <p>This is the most important step where you provide the core data.</p>
+                
+                <ol>
+                    <li><strong>Type of SPM:</strong> <strong>This is the most critical selection on the form.</strong> Choose the exact SPM system from which the data file was generated. SANKET loads a unique parsing engine for each type. Choosing the wrong type will cause the analysis to fail.</li>
+                    <li><strong>CLI NAME:</strong> Select your name from the dropdown. This will be recorded as the "Analysis By" person in the report.</li>
+                    <li><strong>Date and Time Range:</strong> Specify the precise start and end date/time for the analysis. SANKET will ignore all data outside this window.</li>
+                    <style>
+    .important-note {
+        background-color: #fff9e6; border: 1px solid #ffecb3;
+        border-left: 5px solid #ffc107; padding: 15px 20px;
+        margin: 25px 0; border-radius: 8px;
+    }
+    .important-note h4 { margin-top: 0; color: #ff8f00; }
+</style>
+<div class="important-note">
+    <h4>Selecting the Correct Time Range (Very Important!)</h4>
+    <p>For an accurate analysis, selecting the correct time window is crucial.</p>
+    <ul>
+        <li><strong>"From" Date and Time:</strong> Select a time that is <strong>2-3 minutes *before* the train's actual departure time</strong>. This ensures the tool correctly identifies the departure event from a standstill position.</li>
+        <li><strong>"To" Date and Time:</strong> Similarly, select a time that is <strong>2-3 minutes *after* the train's actual arrival time</strong>. This ensures the entire journey, including the final stop, is captured.</li>
+    </ul>
+</div>
+                    <li><strong>Upload Files:</strong>
+                        <ul>
+                            <li>Click to upload the <strong>SPM File</strong>, ensuring its format matches your selection in the "Type of SPM" dropdown.</li>
+                            <li>(Optional) Click to upload the <strong>CUG.csv File</strong> if you want to include the Crew Call Analysis.</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h4>Step 4: Generate the Report</h4>
+                <p>Once all fields are correctly filled and files are uploaded, click the <strong>ANALYZE THE SPM DATA</strong> button. A loading animation will indicate that SANKET is processing millions of data points, performing calculations, and generating charts. Upon completion, you will be redirected to the interactive report page.</p>
+            </div>
+            
+            <div class="manual-section">
+                <h2>📈 4. Understanding the Analysis Report</h2>
+                <p>The report page uses a tabbed interface. Each tab presents a different aspect of the analysis.</p>
+
+                <h4>Tab: Driving Analysis</h4>
+                <p>This is the core evaluation tab for assessing a pilot's handling skills.</p>
+                <ul>
+                    <li><strong>Stop Analysis Table:</strong> For every stop detected, the table shows:
+                        <ul>
+                            <li><strong>Speeds (1000m, 800m, 500m, 100m, 50m):</strong> These columns show the train's speed at key check-points before a full stop. This allows you to verify if the LP is adhering to speed reduction profiles.</li>
+                            <ul>
+    <li><strong>For GOODS Rake:</strong> A 'Smooth' analysis requires speeds to be ≤ 30 Kmph at 1000m, ≤ 25 Kmph at 500m, ≤ 15 Kmph at 100m, and ≤ 10 Kmph at 50m before the stop. Exceeding these suggests a 'Late' braking.</li>
+    <li><strong>For COACHING/MEMU Rake:</strong> A 'Smooth' analysis requires speeds to be ≤ 60 Kmph at 1000m, ≤ 45 Kmph at 500m,≤ 30 Kmph at 100m, and ≤ 20 Kmph at 50m before the stop.</li>
+    <li><strong>NOTE:</strong> For Coaching Trains when train is stopping at station having schedule stoppage,CLIs to analyze by <strong>considering the Speed to be ≤ 60 Kmph at 800m instead of 1000m</strong> </li>
+</ul>
+                            <li><strong>System Generated Analysis:</strong> SANKET automatically classifies the braking as <strong>'Smooth'</strong> or <strong>'Late'</strong>.
+                                <ul>
+                                    <li><strong>Smooth:</strong> Indicates the train's speed was at or below the recommended thresholds at all check-points for that rake type.</li>
+                                    <li><strong>Late:</strong> Indicates the speed was higher than recommended at one or more check-points, suggesting a delayed or hard brake application.</li>
+                                </ul>
+                            </li>
+                            <li><strong>CLI Interaction:</strong> As the final authority, you can <strong>override</strong> the system's analysis using the dropdown and add your specific findings in the <strong>CLI Remark</strong> text field for each stop.</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <h4>Tab: Violations</h4>
+                <p>This tab highlights critical safety and operational deviations.</p>
+                <ul>
+                    <li><strong>Overspeed Details:</strong> Lists all instances where the train's speed exceeded the <strong>MPS</strong> you set on the form. It includes the section, time range, and speed range of the violation.</li>
+                    <li><strong>Suspected Wheel Slip:</strong> Flags events where acceleration is <strong>≥ 4 Kmph per second</strong>. This indicates a potential loss of traction where the wheels spin faster than the train is moving.</li>
+                    <li><strong>Suspected Wheel Skid:</strong> Flags events where deceleration is <strong>≥ 5 Kmph per second</strong>. This suggests a potential wheel lock-up during braking or an emergency brake application.</li>
+                </ul>
+
+                <h4>Tab: Speed Range Summary</h4>
+                <p>This tab provides a high-level overview of the journey's efficiency and speed profile.</p>
+                <ul>
+                    <li><strong>Distance in Speed Brackets:</strong> This table answers, "How was the speed managed throughout the trip?" It shows the percentage of the journey and kilometers covered within specific speed ranges. A high percentage "AT MPS" suggests efficient operation.</li>
+                    <li><strong>Section-wise Speed Summary:</strong> This table compares performance across different station-to-station blocks, showing the <strong>Most Frequent (Mode), Maximum, and Average</strong> speed for each.</li>
+                </ul>
+
+                <h4>Tab: Brake Tests (BFT & BPT)</h4>
+                <p>This tab automates the search for mandatory brake tests and uses the following speed windows:</p>
+                <style>.speed-range-info{font-style: italic;color: #555;font-size: 0.9em;margin-top: 5px;}</style>
+                <ul>
+                    <li><strong>Brake Feel Test (BFT):</strong>
+                        <div class="speed-range-info">14-21 Kmph (For all rake types)</div>
+                    </li>
+                    <li><strong>Brake Power Test (BPT):</strong>
+                        <div class="speed-range-info">GOODS: 40-50 Kmph | COACHING/MEMU: 60-70 Kmph</div>
+                    </li>
+                </ul>
+                <ul>
+                    <li><strong>Detection Logic:</strong> SANKET scans for a continuous speed reduction within the prescribed speed window. The rules are as follows:
+                        <ul>
+                            <li style="margin-top: 5px;">For a <strong>Brake Feel Test (BFT)</strong>, the speed must reduce by at least <strong>5 Kmph</strong>.</li>
+                            <li style="margin-top: 5px;">For a <strong>Brake Power Test (BPT)</strong>, the speed must reduce by at least <strong>40% of its initial value</strong> (e.g., a test starting at 60 Kmph must end at 36 Kmph or less).</li>
+                        </ul>
+                    </li>
+                    <li><strong>Results:</strong> If a valid test is found, its details are displayed. If not, the report indicates that the test was not done.</li>
+                </ul>
+                </div>
+
+            <div class="manual-section">
+                <h2>📄 5. Finalizing and Exporting the Report</h2>
+                <p>The final step is to add your conclusive remarks and generate the official document.</p>
+                <ol>
+                    <li>Navigate to the <strong>CLI Observation</strong> tab.</li>
+                    <li><strong>Use Quick Remarks (New Feature):</strong> To speed up your workflow, use the <strong>Quick Remarks</strong> buttons located just above the text area. Clicking on a button like 'Driving Satisfactory' or 'Late Braking Observed' will instantly add that standard phrase to your observation.</li>
+                    <li><strong>Write CLI Observation:</strong> Write your overall summary and judgment of the trip in this text area. You can type it manually, use the Quick Remarks buttons to get started, or combine both. <strong>You must write a minimum of 15 words to enable the download button.</strong> This is a quality control measure.</li>
+                    <li><strong>Abnormalities Found:</strong> Use the second text box to note any other issues found (e.g., data gaps, unusual events).</li>
+                    <li><strong>Download Report:</strong> Once the 15-word minimum is met, the <strong>Download Report</strong> button will become active. Clicking it performs two crucial actions:
+                        <ul>
+                            <li><strong>Generates and Downloads a PDF:</strong> A complete, professionally formatted PDF report is saved to your computer.</li>
+                            <li><strong>Sends Data to Google Sheet:</strong> A summary of the analysis, including your final remarks, is sent to the central database for record-keeping and trend analysis.</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div id="hi-manual" class="manual-content">
+            <div class="manual-section">
+                <h2>🧑‍🏫 १. परिचय</h2>
+                <p><strong>SANKET (SPM एनालिसिस एंड नेविगेशन केपीए एक्सट्रैक्शन टूल)</strong> एक विशेष वेब एप्लिकेशन है जिसे इलेक्ट्रिकल (ओपी) विभाग, बिलासपुर, द.पू.म. रेलवे द्वारा बनाया गया है। इसका मुख्य उद्देश्य लोकोमोटिव स्पीड-टाइम-डिस्टेंस-इवेंट रिकॉर्डर (SPM) डेटा के विश्लेषण के समय लेने वाले और जटिल कार्य को एक तेज़, स्वचालित और मानकीकृत प्रक्रिया में बदलना है।</p>
+                <p>यह टूल मुख्य लोको निरीक्षकों (CLIs) के लिए एक बुद्धिमान सहायक के रूप में कार्य करता है, जो कच्ची डेटा फ़ाइलों को लेकर एक व्यापक, बहु-पृष्ठीय विश्लेषणात्मक रिपोर्ट तैयार करता है। यह रिपोर्ट सिर्फ डेटा का ढेर नहीं है; यह मुख्य प्रदर्शन का विश्लेषण (KPA) के मुकाबले एक लोको पायलट के प्रदर्शन का एक संगठित मूल्यांकन है।</p>
+            </div>
+
+            <div class="manual-section">
+                <h2>⚙️ २. सिस्टम आवश्यकताएँ और सेटअप</h2>
+                <p>शुरू करने से पहले, सुनिश्चित करें कि आपके पास सही फाइलें उपलब्ध हैं। SANKET की सटीकता आपके द्वारा प्रदान किए गए डेटा पर निर्भर करती है।</p>
+                <ul>
+                    <li><strong>SPM डेटा फ़ाइल (अनिवार्य):</strong> यह लोकोमोटिव के रिकॉर्डर से प्राप्त प्राथमिक कच्ची डेटा फ़ाइल है। आवश्यक फ़ाइल प्रारूप आपके द्वारा फॉर्म में चुने गए <strong>SPM के प्रकार</strong> से सख्ती से जुड़ा हुआ है:
+                        <ul>
+                            <li><strong>Laxven, Telpro:</strong> के लिए <strong>एक्सेल फ़ाइल</strong> (`.xlsx` या `.xls`) की आवश्यकता है।</li>
+                            <li><strong>RTIS:</strong> <strong style="color: blue;">महत्वपूर्ण नोट!</strong> RTIS से प्राप्त कच्चा डेटा आम तौर पर <code>.csv</code> फ़ाइल में होता है। SANKET में अपलोड करने से पहले, आपको इस फ़ाइल को Microsoft Excel में खोलकर <strong>Excel Workbook (.xlsx)</strong> के रूप में सेव करना अनिवार्य है।</li>
+                            <li><strong>Medha:</strong> के लिए एक विशिष्ट <strong>टेक्स्ट फ़ाइल</strong> (`.txt`) की आवश्यकता है।</li>
+                            <li><strong>MR, VEL:</strong> के लिए **PDF फ़ाइल** (`.pdf`) की आवश्यकता है।</li>
+                        </ul>
+                        <strong style="color: red;">नोट: चयनित SPM के लिए गलत फ़ाइल प्रकार अपलोड करने पर त्रुटि होगी।</strong>
+                    </li>
+                    <li><strong>CUG.csv फ़ाइल (वैकल्पिक लेकिन अनुशंसित):</strong> क्रू के मोबाइल फोन के उपयोग का विश्लेषण करने के लिए, आपको `.csv` प्रारूप में CUG कॉल डेटा रिपोर्ट की आवश्यकता है।
+                        <ul>
+                            <li><strong>उद्देश्य:</strong> यह फ़ाइल SANKET को कॉल के समय को ट्रेन की गति के साथ क्रॉस-रिफरेंस करने की अनुमति देती है।</li>
+                            <li><strong>आवश्यक कॉलम:</strong> फ़ाइल में `CUG MOBILE NO`, `Start Date & Time`, `End Date & Time`, और `Duration in Sec` जैसे हेडर होने चाहिए।</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="manual-section">
+                <h2>३. चरण-दर-चरण विश्लेषण गाइड</h2>
+                <p>मुख्य फॉर्म (`index.html`) का उपयोग करके एक सटीक रिपोर्ट बनाने के लिए इस विस्तृत गाइड का पालन करें।</p>
+                <h4>चरण १: क्रू विवरण भरें (LP और ALP)</h4>
+                <ol>
+                    <li><strong>क्रू ID दर्ज करें:</strong> लोको पायलट (LP) की ID को <strong>LP ID</strong> फ़ील्ड में टाइप करें।</li>
+                    <li><strong>स्वचालित डेटा प्राप्ति:</strong> SANKET तुरंत इस ID को `CREW.csv` डेटाबेस में खोजेगा। यदि कोई मेल मिलता है, तो यह स्वचालित रूप से <strong>LP का नाम, पदनाम, समूह CLI,</strong> और <strong>CUG नंबर</strong> भर देगा। यह सटीकता सुनिश्चित करता है और समय बचाता है।</li>
+                    <li><strong>मैनुअल एंट्री मोड:</strong> यदि कोई LP नया है, स्थानांतरित है, या अभी तक डेटाबेस में नहीं है, तो ID खोज विफल हो जाएगी। इस मामले में, <strong>MANUAL ENTRY MODE</strong> बटन पर क्लिक करें। यह फ़ील्ड्स को अनलॉक कर देगा, जिससे आप मैन्युअल रूप से विवरण टाइप कर सकेंगे।</li>
+                    <li><strong>ALP के लिए दोहराएं:</strong> सहायक लोको पायलट (ALP) के लिए ठीक यही प्रक्रिया अपनाएं।</li>
+                </ol>
+
+                <h4>चरण २: ट्रेन और सेक्शन विवरण भरें</h4>
+                 <p>यह अनुभाग यात्रा के संदर्भ को परिभाषित करता है।</p>
+                 <ul>
+                    <li><strong>लोको और ट्रेन नंबर:</strong> विशिष्ट लोकोमोटिव और ट्रेन नंबर दर्ज करें।</li>
+                    <li><strong>रेक का प्रकार:</strong> <strong>GOODS, COACHING, या MEMU</strong> चुनें। यह चुनाव <strong>महत्वपूर्ण</strong> है क्योंकि SANKET इसका उपयोग विभिन्न विश्लेषण नियमों को लागू करने के लिए करता है। उदाहरण के लिए, 'Smooth' ब्रेकिंग विश्लेषण के लिए गति सीमा एक मालगाड़ी के लिए एक कोचिंग ट्रेन की तुलना में अधिक सख्त होती है।</li>
+                    <li><strong>अधिकतम अनुमेय गति (MPS):</strong> मार्ग के लिए आधिकारिक MPS चुनें। SANKET इस मान का उपयोग अपने <strong>ओवरस्पीडिंग उल्लंघन</strong> विश्लेषण के लिए आधार रेखा के रूप में करता है।</li>
+                    <li><strong>सेक्शन और मार्ग:</strong> पहले, समग्र <strong>सेक्शन</strong> (जैसे, BSP-RIG) चुनें। यह गतिशील रूप से सभी संबंधित स्टेशनों को <strong>From Section</strong> और <strong>To Section</strong> ड्रॉपडाउन में लोड करेगा। फिर, अपने विश्लेषण के लिए विशिष्ट प्रारंभ और अंत स्टेशनों का चयन करें।</li>
+                </ul>
+
+                <h4>चरण ३: विश्लेषण विवरण भरें और फाइलें अपलोड करें</h4>
+                <p>यह सबसे महत्वपूर्ण कदम है जहाँ आप मुख्य डेटा प्रदान करते हैं।</p>
+                <ol>
+                    <li><strong>SPM का प्रकार:</strong> <strong>यह फॉर्म पर सबसे महत्वपूर्ण चयन है।</strong> उस सटीक SPM सिस्टम का चयन करें जिससे डेटा फ़ाइल उत्पन्न हुई थी। SANKET प्रत्येक प्रकार के लिए एक अद्वितीय पार्सिंग इंजन लोड करता है। गलत प्रकार चुनने से विश्लेषण विफल हो जाएगा।</li>
+                    <li><strong>CLI का नाम:</strong> ड्रॉपडाउन से अपना नाम चुनें। यह रिपोर्ट में "विश्लेषणकर्ता" के रूप में दर्ज किया जाएगा।</li>
+                    <li><strong>दिनांक और समय सीमा:</strong> विश्लेषण के लिए सटीक प्रारंभ और समाप्ति दिनांक/समय निर्दिष्ट करें। SANKET इस विंडो के बाहर के सभी डेटा को अनदेखा कर देगा।</li>
+                    <style>
+    .important-note {
+        background-color: #fff9e6; border: 1px solid #ffecb3;
+        border-left: 5px solid #ffc107; padding: 15px 20px;
+        margin: 25px 0; border-radius: 8px;
+    }
+    .important-note h4 { margin-top: 0; color: #ff8f00; }
+</style>
+<div class="important-note">
+    <h4>सही समय सीमा का चयन कैसे करें (बहुत महत्वपूर्ण!)</h4>
+    <p>सटीक विश्लेषण के लिए, सही समय-सीमा का चयन करना महत्वपूर्ण है।</p>
+    <ul>
+        <li><strong>From Date and Time:</strong> ट्रेन के वास्तविक प्रस्थान (departure) समय से <strong>2-3 मिनट *पहले* का समय</strong> चुनें। यह सुनिश्चित करता है कि टूल रुकी हुई स्थिति से प्रस्थान की घटना को सही ढंग से पहचान सके।</li>
+        <li><strong>To Date and Time:</strong> इसी तरह, ट्रेन के वास्तविक आगमन (arrival) समय से <strong>2-3 मिनट *बाद* का समय</strong> चुनें। यह सुनिश्चित करता है कि अंतिम स्टॉप सहित पूरी यात्रा विश्लेषण में शामिल हो।</li>
+    </ul>
+</div>
+                    <li><strong>फाइलें अपलोड करें:</strong>
+                        <ul>
+                            <li><strong>SPM फ़ाइल</strong> अपलोड करने के लिए क्लिक करें, यह सुनिश्चित करते हुए कि इसका प्रारूप "SPM का प्रकार" ड्रॉपडाउन में आपके चयन से मेल खाता है।</li>
+                            <li>(वैकल्पिक) यदि आप क्रू कॉल विश्लेषण शामिल करना चाहते हैं तो <strong>CUG.csv फ़ाइल</strong> अपलोड करने के लिए क्लिक करें।</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h4>चरण ४: रिपोर्ट तैयार करें</h4>
+                <p>एक बार सभी फ़ील्ड सही ढंग से भर दिए जाने और फाइलें अपलोड हो जाने के बाद, **ANALYZE THE SPM DATA** बटन पर क्लिक करें। एक लोडिंग एनीमेशन यह संकेत देगा कि SANKET लाखों डेटा बिंदुओं को संसाधित कर रहा है, गणना कर रहा है, और चार्ट बना रहा है। पूरा होने पर, आपको इंटरैक्टिव रिपोर्ट पेज पर भेज दिया जाएगा।</p>
+            </div>
+
+            <div class="manual-section">
+                <h2>📈 ४. विश्लेषण रिपोर्ट को समझना</h2>
+                <p>रिपोर्ट पेज एक टैब्ड इंटरफ़ेस का उपयोग करता है। प्रत्येक टैब विश्लेषण का एक अलग पहलू प्रस्तुत करता है।</p>
+
+                <h4>टैब: ड्राइविंग विश्लेषण (Driving Analysis)</h4>
+                <p>यह एक पायलट के हैंडलिंग कौशल का आकलन करने के लिए मुख्य मूल्यांकन टैब है।</p>
+                <ul>
+                    <li><strong>स्टॉप विश्लेषण तालिका:</strong> प्रत्येक पता लगाए गए स्टॉप के लिए, तालिका दिखाती है:
+                        <ul>
+                            <li><strong>गति (1000m,800m, 500m, 100m, 50m):</strong> ये कॉलम पूरी तरह से रुकने से पहले प्रमुख चेक-पॉइंट्स पर ट्रेन की गति दिखाते हैं। यह आपको यह सत्यापित करने की अनुमति देता है कि LP गति में कमी के प्रोफाइल का पालन कर रहा है या नहीं।</li>
+                            <ul>
+    <li><strong>GOODS रेक के लिए:</strong> 'Smooth' विश्लेषण के लिए स्टॉप से पहले 1000m पर ≤ 30 Kmph, 500m पर ≤ 25 Kmph, 100m पर ≤ 15 Kmph, और 50m पर ≤ 10 Kmph की गति आवश्यक है। इससे अधिक गति 'Late' ब्रेकिंग का संकेत देती है।</li>
+    <li><strong>COACHING/MEMU रेक के लिए:</strong> 'Smooth' विश्लेषण के लिए स्टॉप से पहले 1000m पर ≤ 60 Kmph, 500m पर ≤ 45 Kmph,100m पर ≤ 30 Kmph, और 50m पर ≤ 20 Kmph की गति आवश्यक है।</li>
+    <li><strong>नोट:</strong> कोचिंग ट्रेनों के लिए, जब ट्रेन का निर्धारित स्टेशन पर ठहराव होता है, तो CLI को विश्लेषण करते समय 1000 मीटर के बजाय 800 मीटर की दूरी पर गति ≤ 60 किमी/घं मानकर विश्लेषण करना चाहिए।</li>
+</ul>
+                            <li><strong>सिस्टम जनरेटेड विश्लेषण:</strong> SANKET स्वचालित रूप से ब्रेकिंग को <strong>'Smooth'</strong> या <strong>'Late'</strong> के रूप में वर्गीकृत करता है।
+                                <ul>
+                                    <li><strong>Smooth:</strong> यह इंगित करता है कि उस रेक प्रकार के लिए सभी चेक-पॉइंट्स पर ट्रेन की गति अनुशंसित सीमा पर या उससे नीचे थी।</li>
+                                    <li><strong>Late:</strong> यह इंगित करता है कि गति एक या अधिक चेक-पॉइंट्स पर अनुशंसित से अधिक थी, जो देरी से या कठोर ब्रेक लगाने का सुझाव देती है।</li>
+                                </ul>
+                            </li>
+                            <li><strong>CLI इंटरेक्शन:</strong> अंतिम प्राधिकारी के रूप में, आप ड्रॉपडाउन का उपयोग करके सिस्टम के विश्लेषण को <strong>ओवरराइड</strong> कर सकते हैं और प्रत्येक स्टॉप के लिए <strong>CLI Remark</strong> टेक्स्ट फ़ील्ड में अपनी विशिष्ट खोज जोड़ सकते हैं।</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <h4>टैब: उल्लंघन (Violations)</h4>
+                <p>यह टैब महत्वपूर्ण सुरक्षा और परिचालन विचलनों पर प्रकाश डालता है।</p>
+                <ul>
+                    <li><strong>ओवरस्पीड विवरण:</strong> उन सभी उदाहरणों को सूचीबद्ध करता है जहाँ ट्रेन की गति आपके द्वारा फॉर्म पर सेट किए गए <strong>MPS</strong> से अधिक हो गई। इसमें उल्लंघन का सेक्शन, समय सीमा और गति सीमा शामिल है।</li>
+                    <li><strong>संदिग्ध व्हील स्लिप:</strong> उन घटनाओं को फ़्लैग करता है जहाँ त्वरण <strong>≥ 4 Kmph प्रति सेकंड</strong> है। यह कर्षण के संभावित नुकसान का संकेत देता है जहाँ पहिए ट्रेन की गति से तेज़ी से घूमते हैं।</li>
+                    <li><strong>संदिग्ध व्हील स्किड:</strong> उन घटनाओं को फ़्लैग करता है जहाँ मंदी <strong>≥ 5 Kmph प्रति सेकंड</strong> है। यह ब्रेकिंग के दौरान पहिया लॉक-अप या आपातकालीन ब्रेक लगाने का सुझाव देता है।</li>
+                </ul>
+
+                <h4>टैब: गति सीमा सारांश (Speed Range Summary)</h4>
+                <p>यह टैब यात्रा की दक्षता और गति प्रोफ़ाइल का एक उच्च-स्तरीय अवलोकन प्रदान करता है।</p>
+                <ul>
+                    <li><strong>गति ब्रैकेट में दूरी:</strong> यह तालिका जवाब देती है, "पूरी यात्रा के दौरान गति का प्रबंधन कैसे किया गया?" यह विशिष्ट गति श्रेणियों के भीतर यात्रा का प्रतिशत और तय किए गए किलोमीटर दिखाती है। "AT MPS" पर एक उच्च प्रतिशत कुशल संचालन का सुझाव देता है।</li>
+                    <li><strong>सेक्शन-वार सारांश:</strong> यह तालिका विभिन्न स्टेशन-से-स्टेशन ब्लॉकों में प्रदर्शन की तुलना करती है, जिसमें प्रत्येक के लिए <strong>सबसे लगातार (Mode), अधिकतम, और औसत</strong> गति दिखाई जाती है।</li>
+                </ul>
+
+                <h4>टैब: ब्रेक टेस्ट (BFT और BPT)</h4>
+                <p>यह टैब अनिवार्य ब्रेक टेस्ट की खोज को स्वचालित करता है और निम्नलिखित गति सीमाओं का उपयोग करता है:</p>
+                <style>.speed-range-info{font-style: italic;color: #555;font-size: 0.9em;margin-top: 5px;}</style>
+                <ul>
+                    <li><strong>ब्रेक फील टेस्ट (BFT):</strong>
+                        <div class="speed-range-info">14-21 Kmph (सभी प्रकार के रेक के लिए)</div>
+                    </li>
+                    <li><strong>ब्रेक पावर टेस्ट (BPT):</strong>
+                        <div class="speed-range-info">GOODS: 40-50 Kmph | COACHING/MEMU: 60-70 Kmph</div>
+                    </li>
+                </ul>
+                <ul>
+                    <li><strong>डिटेक्शन लॉजिक:</strong> SANKET चयनित रेक प्रकार के लिए निर्धारित गति विंडो के भीतर निरंतर गति में कमी के लिए स्कैन करता है। इसके नियम इस प्रकार हैं:
+                        <ul>
+                            <li style="margin-top: 5px;"><strong>ब्रेक फील टेस्ट (BFT)</strong> के लिए, गति में कम से कम <strong>5 Kmph</strong> की कमी होनी चाहिए।</li>
+                            <li style="margin-top: 5px;"><strong>ब्रेक पावर टेस्ट (BPT)</strong> के लिए, गति को अपने शुरुआती मान से कम से कम <strong>40%</strong> कम होना चाहिए (उदाहरण के लिए, 60 Kmph पर शुरू होने वाला टेस्ट 36 Kmph या उससे कम पर समाप्त होना चाहिए)।</li>
+                        </ul>
+                    </li>
+                    <li><strong>परिणाम:</strong> यदि एक वैध परीक्षण पाया जाता है, तो उसका विवरण प्रदर्शित होता है। यदि नहीं, तो रिपोर्ट में यह दर्शाया जाता है कि परीक्षण नहीं किया गया था।</li>
+                </ul>
+                </div>
+
+            <div class="manual-section">
+                <h2>📄 ५. रिपोर्ट को अंतिम रूप देना और निर्यात करना</h2>
+                <p>अंतिम चरण अपनी निर्णायक टिप्पणियों को जोड़ना और आधिकारिक दस्तावेज़ तैयार करना है।</p>
+                <ol>
+                    <li><strong>CLI Observation</strong> टैब पर जाएँ।</li>
+                    <li><strong>त्वरित टिप्पणियों का उपयोग करें (नई सुविधा):</strong> अपने काम को तेज़ करने के लिए, टेक्स्ट एरिया के ठीक ऊपर दिए गए <strong>त्वरित टिप्पणियाँ</strong> (Quick Remarks) बटनों का उपयोग करें। 'ड्राइविंग संतोषजनक' या 'देर से ब्रेकिंग देखी गई' जैसे बटन पर क्लिक करने से वह मानक वाक्यांश तुरंत आपकी टिप्पणी में जुड़ जाएगा।</li>
+                    <li><strong>CLI Observation लिखें:</strong> इस टेक्स्ट एरिया में यात्रा का अपना समग्र सारांश और निर्णय लिखें। आप इसे मैन्युअल रूप से टाइप कर सकते हैं, शुरू करने के लिए त्वरित टिप्पणी बटनों का उपयोग कर सकते हैं, या दोनों को मिला सकते हैं। <strong>डाउनलोड बटन को सक्षम करने के लिए आपको कम से कम 15 शब्द लिखने होंगे।</strong> यह एक गुणवत्ता नियंत्रण उपाय है।</li>
+                    <li><strong>पाई गई असामान्यताएं:</strong> किसी भी अन्य मुद्दे (जैसे, डेटा अंतराल, असामान्य घटनाएं) को नोट करने के लिए दूसरे टेक्स्ट बॉक्स का उपयोग करें।</li>
+                    <li><strong>रिपोर्ट डाउनलोड करें:</strong> 15-शब्द की न्यूनतम आवश्यकता पूरी होने के बाद, <strong>Download Report</strong> बटन सक्रिय हो जाएगा। इस पर क्लिक करने से दो महत्वपूर्ण कार्य होते हैं:
+                        <ul>
+                            <li><strong>एक PDF बनाता और डाउनलोड करता है:</strong> एक पूरी, पेशेवर रूप से स्वरूपित PDF रिपोर्ट आपके कंप्यूटर पर सहेजी जाती है।</li>
+                            <li><strong>Google शीट पर डेटा भेजता है:</strong> आपकी अंतिम टिप्पणियों सहित विश्लेषण का सारांश, रिकॉर्ड-कीपिंग और प्रवृत्ति विश्लेषण के लिए केंद्रीय डेटाबेस में भेजा जाता है।</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+        
+        <a href="index.html" class="back-button">← Back to Analysis Form</a>
+    </div>
+
+    <script src="manual.js"></script>
+</body>
+
+</html>

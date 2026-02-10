@@ -1,0 +1,309 @@
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* CSS variables */
+:root {
+    --primary: #ec0c0c;
+    --secondary: #000000;
+    --accent: #ff6b6b;
+    --bg-light: #ff3103;
+    --bg-white: #ffffff;
+    --text-dark: #333333;
+    --text-muted: #0a0a0a;
+    --border-light: #0d0d0d;
+    --shadow: 0 6px 20px rgba(0, 0, 0, 0.815);
+}
+
+/* Body */
+body {
+    font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+    background: linear-gradient(135deg, var(--bg-light), #a6b8f5);
+    color: var(--text-dark);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Container */
+.container {
+    max-width: 1000px;
+    width: 100%;
+    background: linear-gradient(235deg,#f8ef88, #05f0f4);
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    margin: 20px auto;
+    text-align: center;
+}
+
+/* Logo */
+.logo {
+    max-width: 120px;
+    margin-bottom: 0px;
+}
+
+/* Main heading (SANKET) */
+h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 0;
+    margin-bottom: 0;
+    background: linear-gradient(250deg, #000000, #ff0000);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-family: 'Poppins', 'Montserrat', sans-serif;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease;
+}
+
+h1:hover {
+    background: linear-gradient(250deg, #ff0000, #1900fa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Subheading (Full form) */
+h3 {
+    color: #1500ff;
+    font-size: 1.8rem;
+    font-family: 'Dancing Script', cursive; /* Cursive font */
+    font-weight: 400;
+    margin-top: 0; /* Minimal spacing above h3 */
+    margin-bottom: 0px;
+}
+
+h4 {
+    color: #000000;
+    font-size: 1.2rem;
+    font-family: 'Verdana', Fantasy; /* Cursive font */
+    font-weight: 400;
+    margin-top: 0; /* Minimal spacing above h3 */
+    margin-bottom: 20px;
+}
+
+/* Section headings */
+h2 {
+    color: var(--primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+/* Form */
+#spmForm {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* Form row for side-by-side sections */
+.form-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* Form section */
+.form-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+/* Box */
+.box {
+    background: linear-gradient(145deg, #ffffff, #85b3f1);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(33, 2, 232, 0.595);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Form group */
+.form-group {
+    margin-bottom: 25px;
+}
+
+/* Label */
+label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--secondary);
+    display: block;
+    margin-bottom: 6px;
+}
+
+/* Inputs and selects */
+input[type="text"],
+input[type="datetime-local"],
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 1rem;
+    color: var(--text-dark);
+    background: #f9faff;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="datetime-local"]:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(30, 144, 255, 0.2);
+}
+
+input[readonly] {
+    background: #e8ecef;
+    cursor: not-allowed;
+    color: var(--text-muted);
+}
+
+/* File input */
+input[type="file"] {
+    padding: 12px;
+    border: 1px dashed var(--primary);
+    border-radius: 8px;
+    background: #f9faff;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+
+input[type="file"]::-webkit-file-upload-button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+input[type="file"]::-webkit-file-upload-button:hover {
+    background: #1565c0;
+}
+
+/* Submit button */
+button[type="submit"] {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 16px;
+    background: linear-gradient(90deg, var(--primary), #0288d1);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+    box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
+    text-transform: uppercase;
+}
+
+button[type="submit"]:hover {
+    background: linear-gradient(90deg, #0288d1, var(--primary));
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(30, 144, 255, 0.4);
+}
+
+button[type="submit"]:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(30, 144, 255, 0.2);
+}
+
+/* Responsive design */
+@media (max-width: 767px) {
+    .container {
+        padding: 20px;
+        margin: 10px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h3 {
+        font-size: 1rem;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .form-section {
+        min-width: 100%;
+    }
+
+    input[type="text"],
+    input[type="datetime-local"],
+    select,
+    button[type="submit"] {
+        font-size: 0.95rem;
+        padding: 10px;
+    }
+
+    label {
+        font-size: 0.9rem;
+    }
+
+    .box {
+        padding: 15px;
+    }
+
+    button[type="submit"] {
+        padding: 12px;
+        font-size: 1.1rem;
+    }
+}
+
+/* Required field indicator */
+label[for]::after {
+    content: '*';
+    color: var(--accent);
+    margin-left: 4px;
+    font-size: 0.9rem;
+}
+
+label[for="spmFile"]::after {
+    content: none;
+}
+
+/* Error state */
+input.error,
+select.error {
+    border-color: var(--accent);
+    background: #fff2f2;
+}
+
+/* Hidden canvas */
+#speedChart {
+    display: none;
+}

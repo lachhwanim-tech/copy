@@ -3,189 +3,1580 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANKET - SPM Analysis Tool</title>
-    
+    <title>SPM Analysis Form</title>
+    <link href="styles.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    
-    <script src="RTIS.js"></script>
-    <script src="googlesheet.js"></script> 
-
+    <script src="googleApiHandler.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .header { text-align: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
-        .header h1 { margin: 0; color: #2c3e50; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .section-title { grid-column: span 2; font-weight: bold; color: #3498db; border-bottom: 1px solid #eee; margin-top: 15px; }
-        .form-group { display: flex; flex-direction: column; }
-        label { font-weight: 600; font-size: 13px; color: #555; margin-bottom: 4px; }
-        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        input[readonly] { background: #f9f9f9; color: #777; }
-        .btn-analyze { grid-column: span 2; padding: 15px; background: #27ae60; color: white; border: none; font-size: 18px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
-        .btn-analyze:hover { background: #219150; }
-        #dbStatus { text-align: center; font-size: 12px; margin-bottom: 15px; font-weight: bold; }
+/* --- 1. CSS Variables for Theming (Day/Night Mode) --- */
+:root {
+    --bg-gradient: linear-gradient(135deg, #0f172a, #1184f8);
+    --text-color: #f8fafc;
+    --text-muted: #cbd5e1;
+    --accent-color: #00aaff;
+    --accent-glow: rgba(0, 170, 255, 0.5);
+    --border-color: rgba(0, 170, 255, 0.3); 
+    --box-bg: rgba(20, 30, 48, 0.85);
+    --input-bg: #111827; 
+    --success-color: #22c55e;
+    --danger-color: #ef4444;
+    --font-main: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    --h3-highlight-bg: rgba(88, 28, 135, 0.3); /* Dark Purple Glow */
+    --h4-highlight-bg: rgba(17, 94, 89, 0.4);  /* Dark Teal Glow */
+}
+
+body.day-mode {
+    --bg-gradient: linear-gradient(135deg, #82f9bf, #f8f9fa);
+    --text-color: #0c0c0d;
+    --text-muted: #495057;
+    --accent-color: #0056b3;
+    --accent-glow: rgba(0, 86, 179, 0.3);
+    --border-color: rgba(0, 86, 179, 0.5); 
+    --box-bg: rgb(255, 255, 255);
+    --input-bg: #60caffc1;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --h3-highlight-bg: rgba(224, 242, 254, 0.8); /* Light Sky Blue */
+    --h4-highlight-bg: rgba(220, 252, 231, 0.8); /* Light Mint Green */
+}
+
+/* --- 2. General Body and Layout Styles --- */
+body {
+    font-family: var(--font-main);
+    background: var(--bg-gradient);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    transition: background 0.5s, color 0.5s;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    background: transparent; /* Puraana look (Transparent) wapas aa gaya */
+    padding: 25px;
+    border-radius: 15px;
+    position: relative;
+}
+
+/* --- 3. Header and Logo --- */
+.logo {
+    display: block;
+    margin: 0 auto 15px auto;
+    width: 300px;
+    height: auto;
+    filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+
+h1 {
+    color: var(--accent-color);
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px var(--accent-glow);
+}
+
+h3, h4 {
+    text-align: center;
+    color: var(--text-muted);
+    font-weight: 400; /* h4 ke liye neeche bold kiya gaya hai */
+    margin: 10px auto 25px auto;
+    padding: 8px 15px;
+    border-radius: 8px;
+    max-width: 80%;
+    line-height: 1.5; /* Line-height behtar readability ke liye */
+    border: 1px solid var(--border-color);
+    transition: background-color 0.5s;
+}
+
+h3 {
+    background-color: var(--h3-highlight-bg);
+}
+
+h4 {
+    background-color: var(--h4-highlight-bg);
+    font-weight: 700; /* Bold karne ke liye */
+}
+
+h2 {
+    color: var(--text-color);
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 8px;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+}
+
+/* --- 4. Form Sections and Boxes --- */
+.form-row {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.form-section {
+    flex: 1;
+}
+
+.box {
+    background: var(--box-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    transition: background 0.5s, border 0.5s;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* --- 5. Inputs, Selects, and Buttons --- */
+input[type="text"],
+input[type="datetime-local"],
+input[type="file"],
+select {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-color);
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+input[readonly] {
+    background-color: rgba(0,0,0,0.2);
+    cursor: not-allowed;
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(45deg, var(--accent-color), var(--success-color));
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.manual-entry-btn {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.manual-entry-btn:hover {
+    filter: brightness(1.2);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* --- 6. Loading Spinner --- */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.loading-spinner {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid var(--accent-color);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+}
+/* === High-Tech Train Loader CSS === */
+
+.train-loader-container {
+    position: relative;
+    width: 250px;
+    height: 250px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.track {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border: 5px dashed rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+}
+
+/* This arm rotates, carrying the train */
+.train-arm {
+    width: 200px;
+    height: 200px;
+    position: absolute;
+    animation: moveOnTrack 4s linear infinite;
+}
+
+/* Keyframes for the arm's rotation */
+@keyframes moveOnTrack {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.train {
+    position: absolute;
+    top: -15px; /* Adjust to place train on the track */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-end; /* Aligns coaches and engine at the bottom */
+    /* Counter-rotation to keep the train upright */
+    animation: stayUpright 4s linear infinite;
+}
+
+/* Keyframes to keep the train from spinning */
+@keyframes stayUpright {
+    from { transform: translateX(-50%) rotate(0deg); }
+    to { transform: translateX(-50%) rotate(-360deg); }
+}
+
+/* Train Parts Styling */
+.engine {
+    position: relative;
+    margin-right: 5px;
+}
+
+.engine-body {
+    width: 60px;
+    height: 30px;
+    background: var(--danger-color, #ec0c0c);
+    border-radius: 5px 5px 0 0;
+    position: relative;
+    z-index: 2;
+}
+/* Wheels for Engine */
+.engine-body::before, .engine-body::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    width: 12px;
+    height: 12px;
+    background: #555;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+}
+.engine-body::before { left: 8px; }
+.engine-body::after { right: 8px; }
+
+
+.engine-cabin {
+    position: absolute;
+    width: 30px;
+    height: 25px;
+    background: var(--accent-color, #00aaff);
+    bottom: 30px;
+    right: 0;
+    border-radius: 5px 5px 0 0;
+    border: 2px solid #fff;
+    z-index: 1;
+}
+
+.coach {
+    width: 50px;
+    height: 28px;
+    background: var(--accent-color, #00aaff);
+    border: 2px solid #fff;
+    border-radius: 3px;
+    margin-left: -4px; /* Slight overlap */
+    position: relative;
+}
+/* Wheels for Coaches */
+.coach::before, .coach::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    width: 10px;
+    height: 10px;
+    background: #555;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+}
+.coach::before { left: 5px; }
+.coach::after { right: 5px; }
+
+/* Smoke Animation */
+.engine-smoke {
+    position: absolute;
+    top: -30px;
+    left: 10px;
+    display: flex;
+}
+.engine-smoke span {
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    margin: 0 2px;
+    animation: smokePuff 1s infinite;
+}
+.engine-smoke span:nth-child(2) { animation-delay: 0.2s; }
+.engine-smoke span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes smokePuff {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-20px) scale(2); opacity: 0; }
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- 7. Day/Night Toggle Switch --- */
+
+.top-right-nav-link {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-right: 15px; /* Switch se doori ke liye */
+    transition: color 0.3s;
+}
+.top-right-nav-link:hover {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+.theme-switch-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+}
+.theme-switch {
+    display: inline-block;
+    height: 34px;
+    position: relative;
+    width: 60px;
+}
+.theme-switch input {
+    display:none;
+}
+.slider {
+    background-color: #3c4a5f;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+    border-radius: 34px;
+}
+.slider:before {
+    background-color: #fff;
+    bottom: 4px;
+    content: "☀️";
+    height: 26px;
+    left: 4px;
+    position: absolute;
+    transition: .4s;
+    width: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+input:checked + .slider {
+    background-color: var(--accent-color);
+}
+input:checked + .slider:before {
+    transform: translateX(26px);
+    content: "🌙";
+}
+/* styles.css में यह जोड़ें */
+.manual-link {
+    display: block;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: var(--accent-color); /* यह आपके थीम के अनुसार रंग अपना लेगा */
+    text-decoration: none;
+    font-weight: bold;
+}
+.manual-link:hover {
+    text-decoration: underline;
+}
+/* --- About Us Toggle (Updated for Scrolling Page) --- */
+.about-us-toggle-container {
+    /* This makes the icon part of the page flow */
+    position: relative;
+    display: flex;
+    justify-content: flex-end; /* Pushes the icon to the right */
+    margin-top: 30px; /* Space above the icon */
+    padding-right: 10px;
+}
+
+/* New animation keyframes for the pulsing glow */
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 5px var(--accent-glow), 0 0 10px var(--accent-glow);
+    }
+    50% {
+        box-shadow: 0 0 20px var(--accent-glow), 0 0 30px var(--accent-glow);
+    }
+    100% {
+        box-shadow: 0 0 5px var(--accent-glow), 0 0 10px var(--accent-glow);
+    }
+}
+
+.about-us-icon {
+    background: var(--accent-color);
+    color: #fff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    font-family: 'Georgia', serif; /* More professional font for 'i' */
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    transition: transform 0.3s ease;
+    /* Apply the animation here */
+    animation: pulse-glow 3s infinite;
+}
+
+.about-us-icon:hover {
+    transform: scale(1.1);
+    animation-play-state: paused; /* Pause the glow on hover */
+}
+
+.about-us-modal {
+    /* Changed to absolute to position relative to its container */
+    position: absolute;
+    bottom: 120%; /* Position it directly above the icon */
+    right: 0;
+    background: var(--box-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 999;
+    width: 400px;
+    max-width: 90vw;
+    max-height: 75vh;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+.about-us-modal.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.about-us-modal h2 {
+    color: var(--accent-color);
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 8px;
+    font-size: 1.3rem;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.about-us-modal h3 {
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+}
+
+.about-us-modal p, .about-us-modal li {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+.about-us-modal ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin: 0;
+}
+
+.contributor-card {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.contributor-card h4 {
+    margin: 0 0 5px 0;
+    padding: 0;
+    font-size: 1rem;
+    color: var(--accent-color);
+    background: none;
+    border: none;
+    text-align: left;
+    max-width: 100%;
+}
+
+.contributor-card p {
+    margin: 0;
+}
+/* --- 8. Toast Notification Styles --- */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000; /* Sabse upar dikhega */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast-message {
+    background: var(--box-bg);
+    color: var(--text-color);
+    padding: 15px 20px;
+    border-radius: 8px;
+    border-left: 5px solid var(--accent-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.5s ease-in-out;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Jab message dikhega */
+.toast-message.show {
+    opacity: 1;
+    transform: translateX(0);
+}
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="header">
-        <h1>SANKET</h1>
-        <p>SPM Analysis & Navigation KPA Extraction Tool</p>
+    <div class="container">
+        <img src="railway logo.png" alt="Railway Logo" class="logo">
+        <div class="theme-switch-wrapper">
+            <label class="theme-switch" for="checkbox">
+               <a href="graph.html" target="_blank" class="top-right-nav-link">
+            Signal Wise Analysis
+        </a>
+        <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox" />
+            <div class="slider round"></div>
+        </label>
     </div>
-    
-    <div id="dbStatus">Loading Database...</div>
+        <h1>SANKET</h1>
+        <a href="manual.html" target="_blank" class="manual-link">
+           Need Help? View the User Manual
+         </a>
+        <h3>(SPM Analysis and Navigation KPA Extraction Tool)</h3>
+        
+        <h4>
+            (Designed and Developed by Electrical(OP) Bilaspur S.E.C.Railway)
+            <br>
+            (इलेक्ट्रिकल (ओपी), बिलासपुर, द.पू.म. रेलवे द्वारा)
+        </h4>
+        
+        <form id="spmForm">
+            <div class="form-row">
+                <div class="form-section">
+                    <div class="section-header">
+                        <h2>LP DETAILS</h2>
+                        <button type="button" id="manualLpBtn" class="manual-entry-btn">MANNUAL ENTRY MODE</button>
+                    </div>
+                    <div class="box">
+                        <div class="form-group">
+                            <label for="lpId">LP ID</label>
+                            <input type="text" id="lpId" name="lpId" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lpName">LP Name</label>
+                            <input type="text" id="lpName" name="lpName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="lpDesg">LP Designation</label>
+                            <input type="text" id="lpDesg" name="lpDesg" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="lpGroupCli">LP Group CLI</label>
+                            <input type="text" id="lpGroupCli" name="lpGroupCli" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="lpCugNumber">LP CUG Number</label>
+                            <input type="text" id="lpCugNumber" name="lpCugNumber" readonly>
+                        </div>
+                    </div>
 
-    <div class="form-grid">
-        <div class="section-title">Trip Details</div>
-        <div class="form-group"><label>Train No</label><input type="text" id="trainNo" onblur="checkDuplicateEntry()"></div>
-        <div class="form-group"><label>Journey Date</label><input type="date" id="journeyDate" onblur="checkDuplicateEntry()"></div>
-        <div class="form-group"><label>Loco No</label><input type="text" id="locoNo"></div>
-        <div class="form-group"><label>Load Condition</label>
-            <select id="trainLoad"><option value="LOAD">LOADED</option><option value="EMPTY">EMPTY</option></select>
-        </div>
-
-        <div class="section-title">Analysis CLI</div>
-        <div class="form-group"><label>CLI ID</label><input type="text" id="cliId" placeholder="e.g. BSP0187" onblur="autoFillCLI()"></div>
-        <div class="form-group"><label>CLI Name</label><input type="text" id="cliName" readonly></div>
-
-        <div class="section-title">LP Details</div>
-        <div class="form-group"><label>LP ID</label><input type="text" id="lpId" onblur="autoFillLP()"></div>
-        <div class="form-group"><label>LP Name</label><input type="text" id="lpName" readonly></div>
-        <input type="hidden" id="lpDesg"><input type="hidden" id="lpGroupCli"><input type="hidden" id="lpCug">
-
-        <div class="section-title">ALP Details</div>
-        <div class="form-group"><label>ALP ID</label><input type="text" id="alpId" onblur="autoFillALP()"></div>
-        <div class="form-group"><label>ALP Name</label><input type="text" id="alpName" readonly></div>
-        <input type="hidden" id="alpDesg"><input type="hidden" id="alpGroupCli"><input type="hidden" id="alpCug">
-
-        <div class="section-title">Technical Parameters</div>
-        <div class="form-group"><label>From Stn</label><input type="text" id="fromStn"></div>
-        <div class="form-group"><label>To Stn</label><input type="text" id="toStn"></div>
-        <div class="form-group"><label>Rake Type</label>
-            <select id="rakeType"><option value="GOODS">GOODS</option><option value="COACHING">COACHING</option><option value="MEMU">MEMU</option></select>
-        </div>
-        <div class="form-group"><label>MPS</label><input type="number" id="mps" value="110"></div>
-        <div class="form-group" style="grid-column: span 2;"><label>Section</label><input type="text" id="section" value="NGP-BSP"></div>
-
-        <div class="section-title">Upload Data</div>
-        <div class="form-group" style="grid-column: span 2;">
-            <label>SPM/RTIS File (.csv)</label>
-            <input type="file" id="spmFile" accept=".csv">
-        </div>
-
-        <button class="btn-analyze" id="analyzeBtn" onclick="startAnalysis()">Analyze Data</button>
+                    <div id="lp-abnormalities-section" style="margin-top: 20px;">
+    <h2>Last 10 abnormalities with Action Taken</h2>
+    <div class="box" id="lp-abnormalities-list-container">
+        <p id="lp-abnormalities-list">Enter LP ID to view previous records.</p>
     </div>
 </div>
+</div>
+                <div class="form-section">
+                    <div class="section-header">
+                        <h2>ALP DETAILS</h2>
+                        <button type="button" id="manualAlpBtn" class="manual-entry-btn">MANNUAL ENTRY MODE</button>
+                    </div>
+                    <div class="box">
+                        <div class="form-group">
+                            <label for="alpId">ALP ID</label>
+                            <input type="text" id="alpId" name="alpId" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="alpName">ALP Name</label>
+                            <input type="text" id="alpName" name="alpName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="alpDesg">ALP Designation</label>
+                            <input type="text" id="alpDesg" name="alpDesg" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="alpGroupCli">ALP Group CLI</label>
+                            <input type="text" id="alpGroupCli" name="alpGroupCli" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="alpCugNumber">ALP CUG Number</label>
+                            <input type="text" id="alpCugNumber" name="alpCugNumber" readonly>
+                        </div>
+                    </div>
+                     <div id="lp-abnormality-summary-section" style="margin-top: 20px;">
+                        <h2>Historical Abnormality Profile</h2>
+                         <div class="box" id="lp-abnormality-summary-container">
+                            <ul id="lp-abnormality-summary-list" style="list-style: none; padding: 0; margin: 0; font-size: 0.9rem;">
+                                <li style="margin-bottom: 5px;">BFT not done: <strong id="bft-not-done-count">0</strong></li>
+                                <li style="margin-bottom: 5px;">BPT not done: <strong id="bpt-not-done-count">0</strong></li>
+                                <li style="margin-bottom: 5px;">BFT not done as per rule: <strong id="bft-rule-count">0</strong></li>
+                                <li style="margin-bottom: 5px;">BPT not done as per rule: <strong id="bpt-rule-count">0</strong></li>
+                                <li style="margin-bottom: 5px;">Late Controlling: <strong id="late-controlling-count">0</strong></li>
+                                <li style="margin-bottom: 5px;">Overspeeding: <strong id="overspeeding-count">0</strong></li>
+                                <li style="margin-bottom: 5px;">Others Abnormalities: <strong id="others-abnormalities-count">0</strong></li>
+                            </ul>
+                             <p id="lp-abnormality-summary-message" style="margin-top: 10px; font-style: italic;"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-section">
+                    <h2>TRAIN DETAILS</h2>
+                    <div class="box">
+                        <div class="form-group">
+                            <label for="locoNumber">Loco Number</label>
+                            <input type="text" id="locoNumber" name="locoNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="trainNumber">Train Number</label>
+                            <input type="text" id="trainNumber" name="trainNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="rakeType">Type of Rake</label>
+                            <select id="rakeType" name="rakeType" required>
+                                <option value="" disabled selected>Select Rake Type</option>
+                                <option value="GOODS">GOODS</option>
+                                <option value="COACHING">COACHING</option>
+                                <option value="MEMU">MEMU</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="maxPermissibleSpeed">Maximum Permissible Speed (kmph)</label>
+                            <select id="maxPermissibleSpeed" name="maxPermissibleSpeed" required>
+                                <option value="" disabled selected>Select Speed</option>
+                                <option value="40">40 kmph</option>
+                                <option value="45">45 kmph</option>
+                                <option value="50">50 kmph</option>
+                                <option value="55">55 kmph</option>
+                                <option value="60">60 kmph</option>
+                                <option value="65">65 kmph</option>
+                                <option value="70">70 kmph</option>
+                                <option value="75">75 kmph</option>
+                                <option value="80">80 kmph</option>
+                                <option value="85">85 kmph</option>
+                                <option value="90">90 kmph</option>
+                                <option value="95">95 kmph</option>
+                                <option value="100">100 kmph</option>
+                                <option value="105">105 kmph</option>
+                                <option value="110">110 kmph</option>
+                                <option value="115">115 kmph</option>
+                                <option value="120">120 kmph</option>
+                                <option value="125">125 kmph</option>
+                                <option value="129">129 kmph</option>
+                                <option value="130">130 kmph</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h2>SECTION DETAILS</h2>
+                    <div class="box">
+                        <div class="form-group">
+                            <label for="section">Section</label>
+                            <select id="section" name="section" required>
+                                <option value="" disabled selected>Select Section</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fromSection">From Section</label>
+                            <select id="fromSection" name="fromSection" required>
+                                <option value="" disabled selected>Select From Station</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="toSection">To Section</label>
+                            <select id="toSection" name="toSection" required>
+                                <option value="" disabled selected>Select To Station</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-section">
+                <h2>ANALYSIS DETAILS</h2>
+                <div class="box">
+                    <div class="form-group">
+                        <label for="spmType">Type of SPM</label>
+                        <select id="spmType" name="spmType" required>
+                            <option value="" disabled selected>Select SPM Type</option>
+                            <option value="Laxven">Laxven</option>
+                            <option value="Medha">Medha</option>
+                            <option value="Telpro">Telpro</option>
+                            <option value="TelproNew">TelproNew</option>
+                            <option value="MR">MR</option>
+                            <option value="VEL">VEL</option>
+                            <option value="RTIS">RTIS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+    <label for="cliIdInput">CLI ID</label>
+    <input type="text" id="cliIdInput" name="cliIdInput" placeholder="Enter CLI ID" required>
+</div>
 
-<script>
-    // 1. CONFIG: FILE PATHS (Local Folder)
-    const MASTER_FILES = {
-        CREW: "./CREW.csv",
-        CLI: "./CLIMICRO.csv",
-        STATION: "./Station_Signal_Interdistant.csv"
+<div class="form-group">
+    <label for="cliName">CLI NAME</label>
+    <input type="text" id="cliName" name="cliName" placeholder="Auto-filled" readonly>
+</div>
+
+<div class="form-group">
+    <label for="cliHqDisplay">CLI HQ</label>
+    <input type="text" id="cliHqDisplay" name="cliHqDisplay" placeholder="Auto-filled" readonly>
+</div>                    <div class="form-group">
+                        <label for="fromDateTime">From Date and Time</label>
+                        <input type="datetime-local" id="fromDateTime" name="fromDateTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="toDateTime">To Date and Time</label>
+                        <input type="datetime-local" id="toDateTime" name="toDateTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cugFile">Upload CUG.csv File</label>
+                        <input type="file" id="cugFile" name="cugFile" accept=".csv">
+                    </div>
+                    <div class="form-group">
+                        <label for="spmFile">Upload SPM File</label>
+                        <input type="file" id="spmFile" name="spmFile" accept=".xlsx,.xls,.csv,.txt,.pdf" required>
+                    </div>
+                    <button type="submit">ANALYZE THE SPM DATA</button>
+                </div>
+            </div>
+        </form>
+         <div class="about-us-toggle-container">
+        <div class="about-us-icon" id="aboutUsToggle">i</div>
+       <div class="about-us-modal" id="aboutUsModal">
+    <h2>About SANKET</h2>
+    <p>
+        <b>SANKET</b> (SPM Analysis and Navigation KPA Extraction Tool) is a sophisticated web application engineered to revolutionize the analysis of locomotive data recorder (SPM) files. Spearheaded by the Electrical (OP) department of SECR, Bilaspur, this tool automates the meticulous process of monitoring train operations, evaluating crew performance, and ensuring safety compliance.
+    </p>
+
+    <h3>Key Features</h3>
+    <ul>
+        <li><b>Universal SPM Compatibility:</b> Seamlessly processes data from a wide array of SPM systems, including Laxven, Medha, Telpro, MR, VEL, and RTIS.</li>
+        <li><b>Intelligent Anomaly Detection:</b> Automatically identifies and reports critical operational anomalies like overspeeding, wheel slip, and improper brake application.</li>
+        <li><b>Advanced Data Visualization:</b> Renders complex data into intuitive, interactive charts for clear interpretation of locomotive performance.</li>
+        <li><b>Automated Reporting & Logging:</b> Instantly generates comprehensive PDF reports and logs all findings to a centralized Google Sheet for robust record-keeping and trend analysis.</li>
+    </ul>
+
+    <div class="contributor-card">
+        <h3>The Development Team</h3>
+        
+        <h4>Visionary & Motivational Support</h4>
+        <p><b>Shri Masud Alam, Sr. DEE/OP/BSP</b><br>Provided the essential leadership and encouragement that propelled this project from concept to reality.</p>
+        
+        <h4 style="margin-top:15px;">Technical & Domain Expertise</h4>
+        <p><b>Shri N Ravichandran, CLI/BSP</b><br>Offered invaluable expert guidance on locomotive operations and data interpretation, ensuring the tool's accuracy and relevance.</p>
+        
+        <h4 style="margin-top:15px;">Strategic Guidance & Mentorship</h4>
+        <p><b>Shri Rajeev Soni, ADEE/OP/BSP</b><br>His strategic insights and dedicated mentorship were pivotal in navigating project challenges and shaping the tool's successful development.</p>
+
+        <h4 style="margin-top:15px;">Lead Developer & Architect</h4>
+        <p><b>Shri Mohammad Rustam Khan, Sr. ALP/BSP</b><br>Masterminded the core architecture, coding, and web design, transforming complex requirements into a functional and user-friendly application.</p>
+
+        <h4 style="margin-top:15px;">Data Management & Curation</h4>
+        <p><b>Shri Chandan Shah, Sr. ALP/BSP</b><br><b>Shri Rupesh Kumar Verma, TECH-1/BSP</b><br>Instrumental in arranging, structuring, and validating the vast datasets required for the tool's backend logic.</p>
+    </div>
+</div>
+    </div>
+    <canvas id="speedChart" style="display: none;"></canvas>
+    <canvas id="stopChart" style="display: none;"></canvas>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="train-loader-container">
+            <div class="track"></div>
+            <div class="train-arm">
+                <div class="train">
+                    <div class="engine">
+                        <div class="engine-body"></div>
+                        <div class="engine-cabin"></div>
+                        <div class="engine-smoke">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="coach"></div>
+                    <div class="coach"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Global function to toggle loading overlay
+    window.toggleLoadingOverlay = function(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
     };
 
-    let crewData = [], cliData = [];
-    window.stationData = [];
-
-    // 2. LOAD DATABASE
-    window.onload = async function() {
-        try {
-            await Promise.all([
-                loadCSV(MASTER_FILES.CREW, d => crewData = d),
-                loadCSV(MASTER_FILES.CLI, d => cliData = d),
-                loadCSV(MASTER_FILES.STATION, d => window.stationData = d)
-            ]);
-            document.getElementById('dbStatus').innerHTML = "✅ Database Connected";
-            document.getElementById('dbStatus').style.color = "green";
-        } catch (e) {
-            document.getElementById('dbStatus').innerHTML = "❌ Database Load Failed (Check File Names)";
-            document.getElementById('dbStatus').style.color = "red";
-        }
-    };
-
-    async function loadCSV(url, cb) {
-        return new Promise((resolve) => {
-            Papa.parse(url, {
-                download: true, header: true, skipEmptyLines: true,
-                complete: (res) => { cb(res.data); resolve(); },
-                error: () => resolve() // Continue even if fail
-            });
-        });
-    }
-
-    // 3. AUTO FILL FUNCTIONS
-    window.autoFillCLI = function() {
-        const id = document.getElementById('cliId').value.trim().toUpperCase();
-        const match = cliData.find(r => r['LI ID'] == id);
-        if(match) document.getElementById('cliName').value = match['NAME'];
-        else { alert('CLI ID Not Found'); document.getElementById('cliName').value = ''; }
-    };
-
-    window.autoFillLP = function() { fillCrew('lp'); };
-    window.autoFillALP = function() { fillCrew('alp'); };
-
-    function fillCrew(type) {
-        const id = document.getElementById(type+'Id').value.trim().toUpperCase();
-        const match = crewData.find(r => r['CREWID'] == id);
-        if(match) {
-            document.getElementById(type+'Name').value = match['CREW NAME'];
-            document.getElementById(type+'Desg').value = match['DESG'] || '';
-            document.getElementById(type+'GroupCli').value = match['CLI NAME'] || '';
-            document.getElementById(type+'Cug').value = match['CUG NUMBER'] || '';
-        } else {
-            alert(type.toUpperCase() + ' ID Not Found');
-        }
-    }
-
-    // 4. START ANALYSIS
-    window.startAnalysis = async function() {
-        const file = document.getElementById('spmFile').files[0];
-        if(!file) { alert("Please upload file"); return; }
-
-        const inputs = {
-            trainNo: document.getElementById('trainNo').value,
-            journeyDate: document.getElementById('journeyDate').value,
-            locoNo: document.getElementById('locoNo').value,
-            trainLoad: document.getElementById('trainLoad').value,
-            cliName: document.getElementById('cliName').value,
-            
-            lpId: document.getElementById('lpId').value,
-            lpName: document.getElementById('lpName').value,
-            lpDesg: document.getElementById('lpDesg').value,
-            lpGroupCli: document.getElementById('lpGroupCli').value,
-            lpCug: document.getElementById('lpCug').value,
-
-            alpId: document.getElementById('alpId').value,
-            alpName: document.getElementById('alpName').value,
-            alpDesg: document.getElementById('alpDesg').value,
-            alpGroupCli: document.getElementById('alpGroupCli').value,
-            alpCug: document.getElementById('alpCug').value,
-
-            rakeType: document.getElementById('rakeType').value,
-            mps: document.getElementById('mps').value,
-            section: document.getElementById('section').value,
-            
-            analysisTime: new Date().toLocaleString()
+    function loadScript(src, callback) {
+        const existingScript = document.querySelector('script[data-spm-script]');
+        if (existingScript) existingScript.remove();
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.dataset.spmScript = true;
+        script.onload = callback;
+        script.onerror = () => {
+            alert(`Failed to load script: ${src}. Please ensure the script exists and try again.`);
+            window.toggleLoadingOverlay(false);
         };
+        document.body.appendChild(script);
+    }
+
+    let crewData = [];
+    let stationSignalData = [];
+    // --- NEW: Global Variable for CLI Data ---
+    let cliDataMap = {}; 
+
+    const fetchCSV = async (filePath) => {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) throw new Error(`Failed to fetch ${filePath}: ${response.statusText}`);
+            const text = await response.text();
+            return new Promise((resolve) => {
+                Papa.parse(text, {
+                    header: true,
+                    skipEmptyLines: true,
+                    transform: (value, field) => value.trim(),
+                    complete: (result) => resolve(result.data),
+                });
+            });
+        } catch (error) {
+            console.error(`Error loading ${filePath}:`, error);
+            throw error;
+        }
+    };
+
+    // --- Fetch Crew Data from Google Sheet ---
+    async function fetchCrewDataFromGoogleSheet() {
+        const SPREADSHEET_ID = '1UtjGKgOXgc9e5NcCgaTg0BVrUVlF6Xx7SbfcHvUxV-A'; 
+        const SHEET_NAME = 'Sheet1';
+        const API_KEY = 'AIzaSyChXMJaTllbk8kg5w1bjM06PbbJO5MBeLo'; 
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
 
         try {
-            const result = await processRTISData(file, inputs);
-            localStorage.setItem('spmAnalysisResult', JSON.stringify(result));
-            window.location.href = 'report.html';
-        } catch(e) {
-            alert("Error: " + e.message);
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Google Sheets API Error: ${response.status} ${response.statusText}`);
+            }
+            const data = await response.json();
+            const rows = data.values;
+
+            if (!rows || rows.length === 0) {
+                console.warn("No data found in Crew Google Sheet.");
+                return [];
+            }
+
+            // Assume Row 1 is Headers
+            const headers = rows[0].map(h => h.trim().toUpperCase()); 
+            
+            const crewList = [];
+
+            // Loop through data rows (skipping header)
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length === 0) continue; 
+
+                const crewObj = {};
+                headers.forEach((header, index) => {
+                    crewObj[header] = row[index] ? row[index].trim() : ''; 
+                });
+                crewList.push(crewObj);
+            }
+            
+            console.log(`Loaded ${crewList.length} crew records from Google Sheet.`);
+            return crewList;
+
+        } catch (error) {
+            console.error('Error fetching Crew Data from Google Sheet:', error);
+            alert('Failed to load Crew details from Google Sheet. Check console for errors.');
+            return [];
         }
     }
     
-    window.checkDuplicateEntry = async function() {
-        const t = document.getElementById('trainNo').value;
-        const d = document.getElementById('journeyDate').value;
-        if(t && d && window.checkForDuplicateInBank) await window.checkForDuplicateInBank(t,d);
+    async function fetchLpAbnormalities(lpId) {
+        const abnormalitiesListContainer = document.getElementById('lp-abnormalities-list');
+        const summaryList = document.getElementById('lp-abnormality-summary-list');
+        const summaryMessage = document.getElementById('lp-abnormality-summary-message');
+
+        abnormalitiesListContainer.style.textAlign = 'left';
+
+        abnormalitiesListContainer.innerHTML = 'Loading previous records...';
+        summaryList.style.display = 'none';
+        summaryMessage.textContent = 'Loading summary...';
+        
+        // Reset summary counts
+        document.getElementById('bft-not-done-count').textContent = '0';
+        document.getElementById('bpt-not-done-count').textContent = '0';
+        document.getElementById('bft-rule-count').textContent = '0';
+        document.getElementById('bpt-rule-count').textContent = '0';
+        document.getElementById('late-controlling-count').textContent = '0';
+        document.getElementById('overspeeding-count').textContent = '0';
+        document.getElementById('others-abnormalities-count').textContent = '0';
+
+
+        if (!lpId) {
+            abnormalitiesListContainer.style.textAlign = 'center';
+            abnormalitiesListContainer.innerHTML = 'Enter LP ID to view previous records.';
+            summaryMessage.textContent = 'Enter LP ID to view summary.';
+            return;
+        }
+
+        const SPREADSHEET_ID = '1__RDoiJgxgHaHJo5aMByu-q0xJDXPswQopFo9jYAAdM';
+        const API_KEY = 'AIzaSyChXMJaTllbk8kg5w1bjM06PbbJO5MBeLo';
+        const SHEET_NAME = 'Sheet1';
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Google Sheets API request failed with status ${response.status}`);
+            }
+            const data = await response.json();
+            const rows = data.values || [];
+
+            if (rows.length === 0) {
+                abnormalitiesListContainer.innerHTML = '<span style="color: var(--danger-color);">Could not load data from the sheet.</span>';
+                summaryMessage.textContent = 'Could not load summary data.';
+                return;
+            }
+
+            const DATE_COL = 0;          
+            const LP_ID_COL = 5;         
+            const ABNORMALITY_COL = 39;  
+            const COUNT_COL = 40;        
+            const ACTION_TAKEN_COL = 41; 
+
+            // Summary columns
+            const BFT_ND_COL = 42;     
+            const BPT_ND_COL = 43;     
+            const BFT_RULE_COL = 44;   
+            const BPT_RULE_COL = 45;   
+            const LATE_CTRL_COL = 46;  
+            const OVERSPEED_COL = 47;  
+            const OTHERS_COL = 48;     
+
+            let lpFound = false;
+            const abnormalities = [];
+            let counts = { bft_nd: 0, bpt_nd: 0, bft_rule: 0, bpt_rule: 0, late_ctrl: 0, overspeed: 0, others: 0 };
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const id = row[LP_ID_COL]?.trim();
+
+                if (id === lpId) {
+                    lpFound = true;
+                    const count = parseInt(row[COUNT_COL]);
+                    const abnormalityText = row[ABNORMALITY_COL];
+                    const actionTakenText = row[ACTION_TAKEN_COL] || 'N/A';
+                    const rawDateStr = row[DATE_COL] || ''; 
+                    const datePart = rawDateStr.split(' ')[0]; 
+
+                    if (abnormalityText && !isNaN(count) && count > 0) {
+                        abnormalities.push({
+                            abnormality: abnormalityText,
+                            action: actionTakenText,
+                            date: datePart 
+                        });
+                    }
+
+                    counts.bft_nd += parseInt(row[BFT_ND_COL] || 0);
+                    counts.bpt_nd += parseInt(row[BPT_ND_COL] || 0);
+                    counts.bft_rule += parseInt(row[BFT_RULE_COL] || 0);
+                    counts.bpt_rule += parseInt(row[BPT_RULE_COL] || 0);
+                    counts.late_ctrl += parseInt(row[LATE_CTRL_COL] || 0);
+                    counts.overspeed += parseInt(row[OVERSPEED_COL] || 0);
+                    counts.others += parseInt(row[OTHERS_COL] || 0);
+                }
+            }
+
+            if (!lpFound) {
+                abnormalitiesListContainer.innerHTML = '<span style="font-weight: bold; color: var(--accent-color);">No prior analysis records were found for this crew member. This may be their first recorded analysis.</span>';
+                summaryMessage.textContent = 'No prior analysis records found for summary.';
+                summaryList.style.display = 'none';
+            } else {
+                if (abnormalities.length === 0) {
+                    abnormalitiesListContainer.innerHTML = '<span style="font-weight: bold; color: var(--success-color);">NIL abnormality found in previous records for this crew member.</span>';
+                } else {
+                    const lastTenAbnormalities = abnormalities.slice(-10).reverse();
+
+                    let listHtml = '<ol style="padding-left: 20px; margin: 0; font-size: 0.85rem; line-height: 1.6;">';
+
+                    lastTenAbnormalities.forEach((item) => {
+                        listHtml += `<li style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">`;
+                        listHtml += `<div><strong style="color: var(--danger-color);">Abnormalities</strong>(<strong style="color: var(--text-color);">${item.date || 'N/A'}</strong>):- ${item.abnormality}</div>`;
+                        listHtml += `<div><strong style="color: var(--accent-color);">Action taken:-</strong> ${item.action}</div>`;
+                        listHtml += `</li>`;
+                    });
+
+                    listHtml += '</ol>';
+                    abnormalitiesListContainer.innerHTML = listHtml;
+                }
+
+                document.getElementById('bft-not-done-count').textContent = counts.bft_nd;
+                document.getElementById('bpt-not-done-count').textContent = counts.bpt_nd;
+                document.getElementById('bft-rule-count').textContent = counts.bft_rule;
+                document.getElementById('bpt-rule-count').textContent = counts.bpt_rule;
+                document.getElementById('late-controlling-count').textContent = counts.late_ctrl;
+                document.getElementById('overspeeding-count').textContent = counts.overspeed;
+                document.getElementById('others-abnormalities-count').textContent = counts.others;
+                summaryList.style.display = 'block';
+                summaryMessage.textContent = '';
+            }
+
+        } catch (error) {
+            console.error('Error fetching abnormalities:', error);
+            abnormalitiesListContainer.innerHTML = `<span style="color: var(--danger-color);">Could not fetch previous abnormality records. Error: ${error.message}</span>`;
+            summaryMessage.textContent = 'Error fetching summary data.';
+            summaryList.style.display = 'none';
+        }
     }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // --- Theme Switcher Logic ---
+        const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+        const currentTheme = localStorage.getItem('theme');
+
+        if (currentTheme) {
+            document.body.classList.add(currentTheme);
+            if (currentTheme === 'day-mode') {
+                toggleSwitch.checked = false;
+            } else {
+                toggleSwitch.checked = true;
+            }
+        } else {
+            document.body.classList.add('day-mode');
+             toggleSwitch.checked = false;
+        }
+
+        function switchTheme(e) {
+            if (e.target.checked) {
+                document.body.classList.remove('day-mode');
+                localStorage.setItem('theme', 'night-mode');
+            } else {
+                document.body.classList.add('day-mode');
+                localStorage.setItem('theme', 'day-mode');
+            }
+        }
+
+        toggleSwitch.addEventListener('change', switchTheme, false);
+        // --- End Theme Switcher Logic ---
+
+        try {
+            // --- NEW: Fetch CLIMICRO.csv logic start ---
+            fetch('CLIMICRO.csv')
+                .then(response => {
+                    if(!response.ok) throw new Error("Could not load CLIMICRO.csv");
+                    return response.text();
+                })
+                .then(csvText => {
+                    const lines = csvText.split('\n');
+                    for(let i=1; i<lines.length; i++) {
+                        const line = lines[i].trim();
+                        if(line) {
+                            const parts = line.split(','); 
+                            if(parts.length >= 3) {
+                                const id = parts[0].trim().toUpperCase();
+                                const name = parts[1].trim();
+                                const hq = parts[2].trim();
+                                cliDataMap[id] = { name: name, hq: hq };
+                            }
+                        }
+                    }
+                    console.log("CLIMICRO data loaded:", Object.keys(cliDataMap).length + " entries.");
+                })
+                .catch(err => console.error("Error loading CLI data:", err));
+            // --- Fetch CLIMICRO.csv logic end ---
+
+            console.log("Fetching Crew Data from Google Sheet...");
+            crewData = await fetchCrewDataFromGoogleSheet();
+            
+            console.log('Loaded CREW Data:', crewData);
+            
+            stationSignalData = await fetchCSV('Station_Signal_Interdistant.csv');
+            console.log('Loaded Station Signal Data:', stationSignalData);
+
+            window.crewData = crewData;
+            window.stationSignalData = stationSignalData;
+
+            const sectionSelect = document.getElementById('section');
+            const uniqueSections = [...new Set(stationSignalData.map(row => row['SECTION']))];
+            uniqueSections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section;
+                option.textContent = section;
+                sectionSelect.appendChild(option);
+            });
+
+            const fromSectionSelect = document.getElementById('fromSection');
+            const toSectionSelect = document.getElementById('toSection');
+
+            sectionSelect.addEventListener('change', (e) => {
+                const selectedSection = e.target.value;
+                fromSectionSelect.innerHTML = '<option value="" disabled selected>Select From Station</option>';
+                toSectionSelect.innerHTML = '<option value="" disabled selected>Select To Station</option>';
+                if (selectedSection) {
+                    const stations = [...new Set(stationSignalData
+                        .filter(row => row['SECTION'] === selectedSection)
+                        .map(row => row['STATION']))];
+                    stations.forEach(station => {
+                        const option = document.createElement('option');
+                        option.value = station;
+                        option.textContent = station;
+                        fromSectionSelect.appendChild(option);
+                        toSectionSelect.appendChild(option.cloneNode(true));
+                    });
+                }
+            });
+
+            document.getElementById('lpId').addEventListener('input', (e) => {
+                const input = e.target;
+                let value = input.value.toUpperCase();
+                input.value = value.replace(/[^A-Z0-9]/g, '');
+                const lpId = e.target.value.trim();
+                const lpRecord = crewData.find(record => record['CREWID'] === lpId);
+                if (lpRecord) {
+                    document.getElementById('lpName').value = lpRecord['CREW NAME'] || '';
+                    document.getElementById('lpDesg').value = lpRecord['DESG'] || '';
+                    document.getElementById('lpGroupCli').value = lpRecord['CLI NAME'] || '';
+                    document.getElementById('lpCugNumber').value = lpRecord['CUG NUMBER'] || '';
+                    fetchLpAbnormalities(lpId);
+                } else {
+                    document.getElementById('lpName').value = '';
+                    document.getElementById('lpDesg').value = '';
+                    document.getElementById('lpGroupCli').value = '';
+                    document.getElementById('lpCugNumber').value = '';
+                    fetchLpAbnormalities(null);
+                }
+            });
+
+            document.getElementById('alpId').addEventListener('input', (e) => {
+                const input = e.target;
+                let value = input.value.toUpperCase();
+                input.value = value.replace(/[^A-Z0-9]/g, '');
+                const alpId = e.target.value.trim();
+                const alpRecord = crewData.find(record => record['CREWID'] === alpId);
+                if (alpRecord) {
+                    document.getElementById('alpName').value = alpRecord['CREW NAME'] || '';
+                    document.getElementById('alpDesg').value = alpRecord['DESG'] || '';
+                    document.getElementById('alpGroupCli').value = alpRecord['CLI NAME'] || '';
+                    document.getElementById('alpCugNumber').value = alpRecord['CUG NUMBER'] || '';
+                } else {
+                    document.getElementById('alpName').value = '';
+                    document.getElementById('alpDesg').value = '';
+                    document.getElementById('alpGroupCli').value = '';
+                    document.getElementById('alpCugNumber').value = '';
+                }
+            });
+
+            // --- NEW: CLI ID Auto-Fill Logic ---
+            const cliIdInput = document.getElementById('cliIdInput');
+            if(cliIdInput) {
+                cliIdInput.addEventListener('input', (e) => {
+                    const input = e.target;
+                    let val = input.value.toUpperCase(); // Force Uppercase
+                    input.value = val; // Set back
+                    
+                    if(cliDataMap[val]) {
+                        // Yahan change kiya hai: 'cliNameDisplay' ki jagah 'cliName'
+                        document.getElementById('cliName').value = cliDataMap[val].name;
+                        document.getElementById('cliHqDisplay').value = cliDataMap[val].hq;
+                    } else {
+                        // Clear fields if ID doesn't match
+                        document.getElementById('cliName').value = "";
+                        document.getElementById('cliHqDisplay').value = "";
+                    }
+                });
+            }
+            // --- End CLI ID Logic ---
+            
+            // --- MANUAL ENTRY BUTTON LOGIC ---
+            const manualLpBtn = document.getElementById('manualLpBtn');
+            const manualAlpBtn = document.getElementById('manualAlpBtn');
+
+            const lpFields = [
+                document.getElementById('lpName'),
+                document.getElementById('lpDesg'),
+                document.getElementById('lpGroupCli'),
+                document.getElementById('lpCugNumber')
+            ];
+
+            const alpFields = [
+                document.getElementById('alpName'),
+                document.getElementById('alpDesg'),
+                document.getElementById('alpGroupCli'),
+                document.getElementById('alpCugNumber')
+            ];
+            
+            manualLpBtn.addEventListener('click', () => {
+                lpFields.forEach(field => {
+                    field.readOnly = false;
+                });
+                document.getElementById('lpName').focus();
+            });
+            
+            manualAlpBtn.addEventListener('click', () => {
+                alpFields.forEach(field => {
+                    field.readOnly = false;
+                });
+                document.getElementById('alpName').focus();
+            });
+            // --- END MANUAL ENTRY LOGIC ---
+            
+            // --- START: Force Uppercase for Manual Entry ---
+            const allManualFields = [...lpFields, ...alpFields];
+
+            allManualFields.forEach(field => {
+                field.addEventListener('input', () => {
+                    const start = field.selectionStart;
+                    const end = field.selectionEnd;
+                    field.value = field.value.toUpperCase();
+                    field.setSelectionRange(start, end);
+                });
+            });
+            // --- END: Force Uppercase for Manual Entry ---
+
+            // --- NOTE: Old "CLI Name Dropdown" logic has been removed as requested ---
+
+            const spmTypeSelect = document.getElementById('spmType');
+            let currentScript = null;
+
+           spmTypeSelect.addEventListener('change', (e) => {
+                const spmType = e.target.value;
+                const fileInput = document.getElementById('spmFile');
+
+                if (spmType === 'Medha') {
+                    fileInput.accept = '.txt';
+                } else if (spmType === 'MR' || spmType === 'VEL') {
+                    fileInput.accept = '.pdf';
+                } else if (spmType === 'RTIS') {
+                    fileInput.accept = '.xlsx,.xls,.csv';
+                } else if (spmType === 'TelproNew') { 
+                    fileInput.accept = '.xlsx,.xls';
+                } else {
+                    fileInput.accept = '.xlsx,.xls,.csv';
+                }
+
+                if (spmType) {
+                    const scriptFile = `${spmType}.js`;
+                    loadScript(scriptFile, () => {
+                        console.log(`${scriptFile} loaded successfully`);
+                        currentScript = scriptFile;
+                    });
+                }
+            });
+
+            const parseCugFile = (file) => {
+                return new Promise((resolve, reject) => {
+                    Papa.parse(file, {
+                        header: true,
+                        skipEmptyLines: true,
+                        transform: (value) => value.trim(),
+                        complete: (result) => {
+                            console.log('Raw CUG Data from upload:', result.data);
+                            const processedData = result.data.map(call => {
+                                const startDateTimeStr = call['Start Date & Time']?.trim();
+                                const endDateTimeStr = call['End Date & Time']?.trim();
+                                const dateTimeRegex = /^(?:(\d{2})[-\/](\d{2})[-\/](\d{4})|(\d{4})[-\/](\d{2})[-\/](\d{2}))\s(\d{2}):(\d{2})(?::(\d{2}))?$/;
+                                const startMatch = startDateTimeStr?.match(dateTimeRegex);
+                                const endMatch = endDateTimeStr?.match(dateTimeRegex);
+                                if (startMatch && endMatch) {
+                                    let startDateTime, endDateTime;
+                                    const startSeconds = startMatch[9] || '00';
+                                    const endSeconds = endMatch[9] || '00';
+                                    if (startMatch[1]) { // DD-MM-YYYY
+                                        startDateTime = new Date(`${startMatch[3]}-${startMatch[2]}-${startMatch[1]}T${startMatch[7]}:${startMatch[8]}:${startSeconds}`);
+                                        endDateTime = new Date(`${endMatch[3]}-${endMatch[2]}-${endMatch[1]}T${endMatch[7]}:${endMatch[8]}:${endSeconds}`);
+                                    } else { // YYYY-MM-DD
+                                        startDateTime = new Date(`${startMatch[4]}-${startMatch[5]}-${startMatch[6]}T${startMatch[7]}:${startMatch[8]}:${startSeconds}`);
+                                        endDateTime = new Date(`${endMatch[4]}-${endMatch[5]}-${endMatch[6]}T${endMatch[7]}:${endMatch[8]}:${endSeconds}`);
+                                    }
+                                    return {
+                                        ...call,
+                                        startDateTime,
+                                        endDateTime,
+                                        duration: parseInt(call['Duration in Sec']) || 0,
+                                        'CUG MOBILE NO': call['CUG MOBILE NO']?.trim()
+                                    };
+                                } else {
+                                    console.warn('Invalid date format in CUG.csv:', { startDateTimeStr, endDateTimeStr });
+                                    return null;
+                                }
+                            }).filter(call => call && !isNaN(call.startDateTime.getTime()) && !isNaN(call.endDateTime.getTime()) && !isNaN(call.duration));
+                            
+                            console.log('Processed CUG Data from upload:', processedData);
+                            resolve(processedData);
+                        },
+                        error: (error) => {
+                            console.error('Error parsing CUG.csv:', error);
+                            reject(error);
+                        }
+                    });
+                });
+            };
+
+            document.getElementById('spmForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // --- YEH LINE ADD KAREIN (HQ ko save karne ke liye) ---
+    const hqValueToSave = document.getElementById('cliHqDisplay').value.trim();
+    localStorage.setItem('currentSessionHq', hqValueToSave);
+    console.log("HQ Saved for Session:", hqValueToSave);
+    // -----------------------------------------------------
+
+    // ... baaki purana code waisa hi rahega ...
+                // --- NEW: Submit Validation for CLI ID ---
+                const cliIdVal = document.getElementById('cliIdInput').value;
+                if(!cliIdVal) {
+                    alert("Please enter a valid CLI ID.");
+                    return;
+                }
+                // --- End Validation ---
+
+                const spmType = document.getElementById('spmType').value;
+                const spmFile = document.getElementById('spmFile').files[0];
+                const cugFile = document.getElementById('cugFile').files[0];
+
+                if (!spmType) {
+                    alert('Please select an SPM Type.');
+                    return;
+                }
+                if (!spmFile) {
+                    alert('Please upload an SPM file.');
+                    return;
+                }
+                const fileExt = spmFile.name.split('.').pop().toLowerCase();
+
+                // File Extension Validation
+                if (['Laxven', 'Telpro'].includes(spmType) && !['xlsx', 'xls'].includes(fileExt)) {
+                    alert(`Please upload an Excel file (.xlsx or .xls) for ${spmType} SPM.`);
+                    return;
+                } else if (spmType === 'RTIS' && !['xlsx', 'xls', 'csv'].includes(fileExt)) {
+                    alert('Please upload an Excel (.xlsx/.xls) or CSV (.csv) file for RTIS SPM.');
+                    return;
+                } else if (spmType === 'Medha' && fileExt !== 'txt') {
+                    alert('Please upload a .txt file for Medha SPM.');
+                    return;
+                } else if ((spmType === 'MR' || spmType === 'VEL') && fileExt !== 'pdf') {
+                    alert('Please upload a .pdf file for MR or VEL SPM.');
+                    return;
+                } else if (spmType === 'TelproNew' && !['xlsx', 'xls'].includes(fileExt)) {
+                    alert(`Please upload an Excel file (.xlsx or .xls) for ${spmType} SPM.`);
+                    return;
+                }
+
+                if (!currentScript) {
+                    alert(`No script loaded for SPM Type: ${spmType}. Please select SPM Type first.`);
+                    return;
+                }
+
+                // --- 3. UPLOAD AND ANALYZE ---
+                // Show Loading Overlay
+                document.getElementById('loadingOverlay').style.display = 'flex';
+
+                try {
+                    // A. Attempt to upload/notify Google
+                    console.log("Calling uploadDataAndFileToGoogle...");
+                    const uploadResult = await uploadDataAndFileToGoogle();
+                    
+                    console.log("Upload Result:", uploadResult);
+
+                    if (uploadResult.status === 'success') {
+                        showToast('File uploaded to Drive successfully.');
+                    } else if (uploadResult.status === 'skipped') {
+                        showToast('Drive Upload skipped. Processing locally...');
+                    }
+
+                    // B. START LOCAL ANALYSIS
+                    let cugData = [];
+                    if (cugFile) {
+                        cugData = await parseCugFile(cugFile);
+                    }
+
+                    // Check if the specific analysis function exists
+                    if (typeof analyzeSPMData === 'function') {
+                         await analyzeSPMData(spmFile, cugData); 
+                    } else if (typeof processLaxvenData === 'function' && spmType === 'Laxven') {
+                         await processLaxvenData(spmFile, cugData);
+                    } else if (typeof processMedhaData === 'function' && spmType === 'Medha') {
+                         await processMedhaData(spmFile, cugData);
+                    } else {
+                         console.log("Looking for specific analysis function for: " + spmType);
+                         
+                         if(window.analyzeData) {
+                             await window.analyzeData(spmFile, cugData);
+                         } else {
+                             console.warn("Analysis function not found. Ensure " + spmType + ".js exports a processing function.");
+                         }
+                    }
+
+                } catch (error) {
+                    console.error('Error during processing:', error);
+                    alert('An error occurred: ' + error.message);
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                }
+            });
+
+        } catch (error) {
+            console.error('Error loading initial CSV files:', error);
+            alert('Failed to load CREW.csv or Station_Signal_Interdistant.csv. Ensure the files are available and correctly formatted.');
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+    });
+
+    // This script should be at the end of the body
+    document.addEventListener('DOMContentLoaded', function() {
+        const aboutUsToggle = document.getElementById('aboutUsToggle');
+        const aboutUsModal = document.getElementById('aboutUsModal');
+
+        if (aboutUsToggle) {
+            aboutUsToggle.addEventListener('click', function() {
+                aboutUsModal.classList.toggle('show');
+            });
+        }
+
+        // Close the modal if the user clicks anywhere outside of the modal content and the icon
+        window.addEventListener('click', function(event) {
+            if (!aboutUsModal.contains(event.target) && !aboutUsToggle.contains(event.target)) {
+                aboutUsModal.classList.remove('show');
+            }
+        });
+    });
+    
+    function showToast(message) {
+        const container = document.getElementById('toast-container');
+        if (!container) return; // Agar container nahi hai to kuch na kare
+
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.textContent = message;
+
+        container.appendChild(toast);
+
+        // Animation ke saath dikhane ke liye
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+
+        // Message ko 4 second ke baad gayab karne ke liye
+        setTimeout(() => {
+            toast.classList.remove('show');
+            // Animation poora hone ke baad element ko delete kar dega
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 4000);
+    }
+
+    // Aapka baaki ka Javascript code yahan se shuru hoga...
+    window.toggleLoadingOverlay = function(show) {
+         document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    };
 </script>
+    <div id="toast-container"></div>
 </body>
+
 </html>

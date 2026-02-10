@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPM Stop Analysis Dashboard (Excel Filter)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script> 
+  <style>
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+        margin: 0;
+        padding: 30px; 
+        min-height: 100vh; 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-sizing: border-box;
+    }
+
+    h1 {
+        text-align: center;
+        color: #1e3a8a;
+        font-size: 2.5rem;
+        margin-bottom: 30px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+    }
+
+    .controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start; 
+        gap: 20px; /* Thoda kam gap */
+        margin-bottom: 30px;
+        padding: 25px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        max-width: 1400px; /* Thoda bada */
+        width: 100%;
+        box-sizing: border-box;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .controls:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    /* --- Excel Filter Styling --- */
+    .filter-group-excel {
+        display: flex;
+        flex-direction: column;
+        min-width: 220px; /* Thoda chota */
+        flex: 1; 
+        background: #f9fafb;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-group-excel label {
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #1f2937;
+        font-size: 1.1rem;
+    }
+
+    .filter-search {
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        background: #fff;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .filter-search:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    /* --- Checkbox List (Scrollable) --- */
+    .checkbox-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 12px;
+        max-height: 180px;      
+        overflow-y: auto;       
+        background: #ffffff;
+        scrollbar-width: thin;
+        scrollbar-color: #93c5fd #e5e7eb;
+    }
+
+    .checkbox-list::-webkit-scrollbar { width: 6px; }
+    .checkbox-list::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 3px; }
+    .checkbox-list::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 3px; }
+    .checkbox-list div { display: flex; align-items: center; }
+
+    .checkbox-list label {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        margin-bottom: 0;
+        width: 100%;
+        color: #374151;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .checkbox-list label:hover { color: #1e40af; }
+    .checkbox-list input { margin-right: 10px; accent-color: #3b82f6; }
+
+    /* --- Rake/Date/Recent Filter Styling --- */
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        min-width: 180px; /* Thoda chota */
+        flex: 1; 
+        background: #f9fafb;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-group label {
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #1f2937;
+        font-size: 1.1rem;
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 15px;
+        border-radius: 6px;
+        background: #fff; 
+        border: 1px solid #e5e7eb; 
+    }
+
+    .checkbox-group div { display: flex; align-items: center; }
+    .checkbox-group input { margin-right: 10px; accent-color: #3b82f6; }
+    .checkbox-group label {
+        font-weight: 500;
+        color: #374151;
+        cursor: pointer;
+        transition: color 0.3s ease;
+        margin-bottom: 0; 
+    }
+    .checkbox-group label:hover { color: #1e40af; }
+
+    /* --- Recent Filter Select & Date Input Styling --- */
+    .filter-group #recent-filter,
+    .filter-group input[type="date"] {
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background: #fff;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        font-family: inherit; 
+        color: #374151; 
+        box-sizing: border-box; /* Date input width ko theek karne ke liye */
+        width: 100%; /* Take full width of parent */
+    }
+
+    .filter-group #recent-filter:focus,
+    .filter-group input[type="date"]:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* --- Chart Container --- */
+    #chart-container {
+        width: 100%;
+        max-width: 1400px; /* Max-width se match karega */
+        height: 650px; 
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        padding: 25px;
+        box-sizing: border-box;
+        display: none;
+        transition: transform 0.3s ease;
+    }
+
+    #chart-container:hover {
+        transform: translateY(-5px);
+    }
+
+    #loading {
+        text-align: center;
+        font-size: 1.3em;
+        color: #6b7280;
+        padding: 30px;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* --- Buttons --- */
+    .button-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        align-self: center; /* Vertically align */
+        margin-top: 15px; /* Adjust margin */
+        min-width: 250px;
+    }
+
+    #generate-btn, #toggle-average-btn {
+        background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: background 0.3s ease, transform 0.2s ease;
+        width: 100%; 
+        box-sizing: border-box;
+        margin-left: 0; /* Override previous margin */
+        margin-top: 0; /* Override previous margin */
+    }
+
+    #generate-btn:hover, #toggle-average-btn:hover {
+        background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+        transform: scale(1.05);
+    }
+
+    </style>
+</head>
+<body>
+
+    <h1>SPM Stop Analysis Dashboard</h1>
+    <div id="loading">Loading data from Google Sheet...</div>
+
+    <div class="controls" id="filters-panel" style="display: none;">
+        
+        <div class="filter-group">
+            <label for="from-date">From Date:</label>
+            <input type="date" id="from-date">
+        </div>
+        <div class="filter-group">
+            <label for="to-date">To Date:</label>
+            <input type="date" id="to-date">
+        </div>
+        <div class="filter-group-excel">
+            <label for="lp-search">Select LP ID (Multiple):</label>
+            <input type="text" id="lp-search" class="filter-search" onkeyup="filterCheckboxes('lp-search', 'lp-filter-list')" placeholder="Search LP...">
+            <div id="lp-filter-list" class="checkbox-list">
+            </div>
+        </div>
+        
+        <div class="filter-group-excel">
+            <label for="location-search">Select Stop Location (Multiple):</label>
+            <input type="text" id="location-search" class="filter-search" onkeyup="filterCheckboxes('location-search', 'location-filter-list')" placeholder="Search Location...">
+            <div id="location-filter-list" class="checkbox-list">
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label>Select Rake Type (Multiple):</label>
+            <div class="checkbox-group" id="rake-filter">
+                <div><input type="checkbox" id="rake-all" value="ALL" checked><label for="rake-all">ALL</label></div>
+                <div><input type="checkbox" id="rake-goods-loaded" value="GOODS LOADED" checked><label for="rake-goods-loaded">GOODS LOADED</label></div>
+                <div><input type="checkbox" id="rake-goods-empty" value="GOODS EMPTY" checked><label for="rake-goods-empty">GOODS EMPTY</label></div>
+                <div><input type="checkbox" id="rake-coaching" value="COACHING" checked><label for="rake-coaching">COACHING</label></div>
+                <div><input type="checkbox" id="rake-memu" value="MEMU" checked><label for="rake-memu">MEMU</label></div>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label>Select Number of Recent Analyses:</label>
+            <select id="recent-filter">
+                <option value="all" selected>All</option>
+                <option value="10">Last 10</option>
+                <option value="20">Last 20</option>
+                <option value="30">Last 30</option>
+                <option value="40">Last 40</option>
+                <option value="50">Last 50</option>
+            </select>
+        </div>
+        
+        <div class="button-container">
+            <button id="generate-btn">Generate Graph</button>
+            <button id="toggle-average-btn">Show Only Average Profile</button>
+        </div>
+    </div>
+
+    <div id="chart-container"></div>
+
+    <script>
+        // --- APNI DETAILS YAHAN DAALEIN ---
+        const API_KEY = 'AIzaSyChXMJaTllbk8kg5w1bjM06PbbJO5MBeLo'; // <-- YAHAN APNA API KEY DAALEIN
+        const SHEET_ID = '1__RDoiJgxgHaHJo5aMByu-q0xJDXPswQopFo9jYAAdM';
+        const RANGE = 'Sheet1!A:AX'; // Pura range A se AX tak
+        // ----------------------------------------
+
+        // --- SAHI COLUMN INDEX MAPPING (A=0, B=1...) ---
+        const COLS = {
+            TIMESTAMP: 0,       // Column A (For Filtering)
+            DATE_OF_JOURNEY: 1, // Column B (NAYA - For Tooltip)
+            TRAIN_NO: 3,        // Column D (NAYA - For Tooltip)
+            LP_ID: 5,           // Column F
+            NAME: 6,            // Column G (NAYA - For Tooltip)
+            STOP_LOCATION: 23,  // Column X
+            KM: 26,             // Column AA
+            SPEED_1000: 27,     // Column AB (NAYA)
+            SPEED_800: 28,      // Column AC
+            SPEED_500: 29,      // Column AD
+            SPEED_100: 30,      // Column AE
+            SPEED_50: 31,       // Column AF
+            RAKE_TYPE: 49        // Column AX
+        };
+
+        const LINE_LIMIT = 50; 
+        const COLOR_PALETTE = [
+            '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', 
+            '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9',
+            '#543005', '#8c510a', '#bf812d', '#dfc27d', '#f6e8c3', '#c7eae5', '#80cdc1', '#35978f', '#01665e', '#003c30',
+            '#8e0152', '#c51b7d', '#de77ae', '#f1b6da', '#fde0ef', '#e6f5d0', '#b8e186', '#7fbc41', '#4d9221', '#276419',
+            '#b2182b', '#d6604d', '#f4a582', '#fddbc7', '#f7f7f7', '#d1e5f0', '#92c5de', '#4393c3', '#2166ac', '#053061'
+        ];
+
+        let myChart;
+        let processedData = []; 
+        let lpSet = new Set();
+        let locationSet = new Set();
+        const loadingDiv = document.getElementById('loading');
+        const chartDiv = document.getElementById('chart-container');
+        const filtersPanel = document.getElementById('filters-panel');
+        let chartBaseOption; 
+        let showOnlyAverage = false; 
+
+        // --- NAYA HELPER: Date ko parse karne ke liye (M/D/YYYY...) ---
+        // YEH FUNCTION SIRF COLUMN A (TIMESTAMP) KE LIYE ISTEMAL HOGA
+        function parseDate(timestampStr) {
+            if (!timestampStr) return null;
+            const datePart = timestampStr.split(' ')[0]; // Sirf '11/4/2025' wala hissa lo
+            const parts = datePart.split('/'); // [11, 4, 2025]
+            if (parts.length === 3) {
+                // Date format ko M/D/YYYY maana ja raha hai
+                const month = parseInt(parts[0], 10) - 1; // JS months 0-indexed hote hain (Jan=0)
+                const day = parseInt(parts[1], 10);
+                const year = parseInt(parts[2], 10);
+                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                    return new Date(year, month, day); // Time ko ignore karke date object banayega
+                }
+            }
+            return null;
+        }
+
+        // --- NAYA HELPER: Date ko 'YYYY-MM-DD' format mein badalne ke liye ---
+        function formatDateToInput(date) {
+            if (!date) return '';
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month 1-indexed chahiye
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+
+        // --- 1. JAB PAGE LOAD HOGA ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            loadAndProcessData(); 
+            document.getElementById('generate-btn').addEventListener('click', updateChart);
+            document.getElementById('toggle-average-btn').addEventListener('click', toggleAverageProfile);
+        });
+
+        // --- 2. CHART KO INITIALIZE KARNA (Updated) ---
+        function initChart() {
+            myChart = echarts.init(chartDiv);
+            
+            chartBaseOption = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross' }, 
+                    formatter: (params) => {
+                        let tooltip = `Distance: ${params[0].axisValue}m<br/>`;
+                        params.sort((a, b) => (b.value[1] || 0) - (a.value[1] || 0)); 
+                        params.forEach(param => {
+                            if (param.value[1] !== null && param.value[1] !== undefined) {
+                                tooltip += `${param.marker} ${param.seriesName}: ${param.value[1].toFixed(1)} Kmph<br/>`;
+                            }
+                        });
+                        return tooltip;
+                    }
+                },
+                toolbox: { 
+                    show: true,
+                    feature: {
+                        dataZoom: { yAxisIndex: 'none' },
+                        dataView: { readOnly: false },
+                        magicType: { type: ['line', 'bar'] },
+                        restore: {},
+                        saveAsImage: {},
+                        legendToggle: {
+                            show: true,
+                            title: 'Toggle Legend',
+                            icon: 'path://M4,5h16v2H4V5zM4,11h16v2H4V11zM4,17h16v2H4V17z', // List icon
+                            onclick: function () {
+                                const currentOption = myChart.getOption();
+                                const isLegendVisible = currentOption.legend[0].show;
+                                myChart.setOption({
+                                    legend: {
+                                        show: !isLegendVisible
+                                    }
+                                });
+                            }
+                        }
+                    }
+                },
+                grid: { left: '3%', right: '4%', bottom: '3%', top: '12%', containLabel: true },
+                // NAYA: X-Axis 1000m se shuru
+                xAxis: { type: 'value', name: 'Distance to Stop (m)', min: 0, max: 1000, inverse: true, axisLabel: { formatter: '{value} m' }, splitLine: { lineStyle: { type: 'dashed', color: '#eee' } } },
+                yAxis: { type: 'value', name: 'Speed (Kmph)', min: 0, max: 120, axisLabel: { formatter: '{value} Kmph' }, splitLine: { lineStyle: { type: 'dashed', color: '#eee' } } },
+                
+                title: { text: 'Stop Approach Speed Analysis' },
+                legend: { show: false, data: [], type: 'scroll', top: 30, padding: 5 },
+                series: []
+            };
+            
+            myChart.setOption(chartBaseOption);
+        }
+
+        // --- 3. TOGGLE AVERAGE PROFILE FUNCTION ---
+        function toggleAverageProfile() {
+            showOnlyAverage = !showOnlyAverage;
+            document.getElementById('toggle-average-btn').textContent = showOnlyAverage ? 'Show All Profiles' : 'Show Only Average Profile';
+            updateChart();
+        }
+
+        // --- 4. GOOGLE SHEETS API SE DATA LOAD KARNA ---
+        async function loadAndProcessData() {
+            try {
+                await new Promise((resolve) => gapi.load('client', resolve));
+                await gapi.client.init({
+                    'apiKey': API_KEY,
+                    'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                });
+                const response = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: RANGE,
+                });
+                const rawData = response.result.values;
+                if (!rawData || rawData.length === 0) { throw new Error("No data found in sheet."); }
+                
+                const { minDate, maxDate } = preprocessData(rawData); // Min/Max date receive karo
+                populateFilters(minDate, maxDate); // Filters ko min/max date pass karo
+                setupAllFilterLogic(); 
+
+                loadingDiv.style.display = 'none'; 
+                filtersPanel.style.display = 'flex'; 
+
+            } catch (error) {
+                console.error('Error loading data from Google Sheets API:', error);
+                let errorMsg = "Error loading data. Check console (F12) for details.";
+                if (error.result && error.result.error) {
+                    if (error.result.error.code === 403) { errorMsg = "Error: Google Sheets API is not enabled or API key is wrong."; }
+                    else if (error.result.error.code === 404) { errorMsg = "Error: Sheet ID not found."; }
+                }
+                loadingDiv.innerText = errorMsg;
+            }
+        }
+
+        // --- 5. DATA PRE-PROCESSING (Updated) ---
+        function preprocessData(rawData) {
+            processedData = [];
+            lpSet.clear();
+            locationSet.clear();
+            
+            // === NAYA LOGIC: Propagation variables ===
+            let currentTimestamp = null;        // Col A (Date Object for filtering)
+            let currentDateOfJourneyStr = null; // Col B (String for tooltip)
+            let currentTrainNo = null;          // Col D (String for tooltip)
+            let currentLpId = null;
+            let currentName = null;             // NAYA - Col G
+            let currentRakeType = null;
+            
+            let minDate = null; // Col A se
+            let maxDate = null; // Col A se
+
+            for (let i = 1; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length < 30) continue; 
+                
+                // --- NAYA LOGIC START ---
+                // 1. Timestamp (Col A) - Date object for filtering
+                const timestampStr = (row[COLS.TIMESTAMP] || "").trim();
+                if (timestampStr !== "") { 
+                    currentTimestamp = parseDate(timestampStr); 
+                }
+
+                // 2. Date of Journey (Col B) - String for tooltip
+                const dateOfJourneyFullStr = (row[COLS.DATE_OF_JOURNEY] || "").trim();
+                if (dateOfJourneyFullStr !== "") {
+                    currentDateOfJourneyStr = dateOfJourneyFullStr.split(' ')[0]; // Sirf '19/7/2025' wala part
+                }
+                
+                // 3. Train No (Col D) - String for tooltip
+                const trainNoStr = (row[COLS.TRAIN_NO] || "").trim();
+                if (trainNoStr !== "") {
+                    currentTrainNo = trainNoStr;
+                }
+                // --- NAYA LOGIC END ---
+
+                // 4. LP ID Check karo (Pehle jaisa)
+                const lpId = (row[COLS.LP_ID] || "").trim();
+                if (lpId !== "") { currentLpId = lpId; }
+
+                // NAYA: 4b. Name Check karo (Col G)
+                const nameStr = (row[COLS.NAME] || "").trim();
+                if (nameStr !== "") { currentName = nameStr; }
+                
+                // 5. Rake Type Check karo (Pehle jaisa)
+                const rakeType = (row[COLS.RAKE_TYPE] || "").trim().toUpperCase();
+                if (rakeType !== "") { currentRakeType = rakeType; }
+
+                // 6. Location Check karo
+                const stopLocation = (row[COLS.STOP_LOCATION] || "").trim();
+                
+                // 7. VALIDATION: (Col A ke timestamp par adhaarit)
+                // Agar location khali hai, ya number hai, YA ABHI TAK KOI FILTER-WALI-DATE NAHI MILI HAI, toh skip karo
+                if (stopLocation === "" || !isNaN(stopLocation) || !currentTimestamp) { 
+                    continue; 
+                }
+
+                // Min/Max Date update karo (currentTimestamp (Col A) valid hai, upar check ho gaya)
+                if (!minDate || currentTimestamp < minDate) minDate = currentTimestamp;
+                if (!maxDate || currentTimestamp > maxDate) maxDate = currentTimestamp;
+
+                if (currentLpId) lpSet.add(currentLpId);
+                locationSet.add(stopLocation);
+
+                // NAYA: 1000m speed add karo
+                let s1000 = parseFloat(row[COLS.SPEED_1000]);
+                let s800 = parseFloat(row[COLS.SPEED_800]);
+                let s500 = parseFloat(row[COLS.SPEED_500]);
+                let s100 = parseFloat(row[COLS.SPEED_100]);
+                let s50 = parseFloat(row[COLS.SPEED_50]);
+
+                s1000 = isNaN(s1000) ? null : s1000;
+                s800 = isNaN(s800) ? null : s800;
+                s500 = isNaN(s500) ? null : s500;
+                s100 = isNaN(s100) ? null : s100;
+                s50 = isNaN(s50) ? null : s50;
+                
+                // NAYA: graphData 1000m se shuru hoga
+                const graphData = [[1000, s1000], [800, s800], [500, s500], [100, s100], [50, s50], [0, 0]];
+
+                processedData.push({
+                    date: currentTimestamp,       // Col A - for filtering
+                    dateStr: currentDateOfJourneyStr, // NAYA - Col B string for display
+                    trainNo: currentTrainNo,      // NAYA - Col D string for display
+                    lpId: currentLpId,
+                    name: currentName,            // NAYA - Col G for display
+                    location: stopLocation,
+                    rakeType: currentRakeType, 
+                    km: row[COLS.KM] || '',
+                    graphData: graphData
+                });
+            }
+            
+            return { minDate, maxDate };
+        }
+
+        // --- 6. FILTERS KO UNIQUE VALUES SE BHARNA (Updated) ---
+        function populateFilters(minDate, maxDate) { // NAYA: minDate, maxDate parameters (Col A se)
+            const lpList = document.getElementById('lp-filter-list');
+            const locationList = document.getElementById('location-filter-list');
+            
+            // LP ID Filter Bharna
+            let lpHtml = '<div><label><input type="checkbox" id="lp-all" class="filter-all" checked> <strong>ALL</strong></label></div>';
+            [...lpSet].sort().forEach((lp, index) => {
+                lpHtml += `<div><label><input type="checkbox" class="lp-item" value="${lp}" checked> ${lp}</label></div>`;
+            });
+            lpList.innerHTML = lpHtml;
+
+            // Location Filter Bharna
+            let locHtml = '<div><label><input type="checkbox" id="location-all" class="filter-all" checked> <strong>ALL</strong></label></div>';
+            [...locationSet].sort().forEach((loc, index) => {
+                locHtml += `<div><label><input type="checkbox" class="location-item" value="${loc}" checked> ${loc}</label></div>`;
+            });
+            locationList.innerHTML = locHtml;
+
+            // NAYA: Date inputs ko set karna (Col A ke data se)
+            if (minDate) {
+                document.getElementById('from-date').value = formatDateToInput(minDate);
+            }
+            if (maxDate) {
+                document.getElementById('to-date').value = formatDateToInput(maxDate);
+            }
+        }
+
+        // --- 7. NAYA FUNCTION: SEARCH BOX KE LIYE ---
+        function filterCheckboxes(inputId, listId) {
+            let input = document.getElementById(inputId);
+            let filter = input.value.toUpperCase();
+            let list = document.getElementById(listId);
+            let items = list.getElementsByTagName('div');
+
+            for (let i = 1; i < items.length; i++) { // i=1 se start karo taaki "ALL" hide na ho
+                let label = items[i].getElementsByTagName('label')[0];
+                if (label) {
+                    let txtValue = label.textContent || label.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        items[i].style.display = "";
+                    } else {
+                        items[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        // --- 8. NAYA FUNCTION: SABHI "ALL" CHECKBOX LOGIC KE LIYE ---
+        function setupAllFilterLogic() {
+            function setupCheckboxLogic(allCheckboxId, itemClassName) {
+                const allCb = document.getElementById(allCheckboxId);
+                const itemCbs = document.querySelectorAll(`.${itemClassName}`);
+
+                allCb.addEventListener('change', () => {
+                    itemCbs.forEach(cb => {
+                        cb.checked = allCb.checked;
+                    });
+                });
+
+                itemCbs.forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        if (!cb.checked) {
+                            allCb.checked = false;
+                        } else if ([...itemCbs].every(c => c.checked)) {
+                            allCb.checked = true;
+                        }
+                    });
+                });
+            }
+
+            setupCheckboxLogic('lp-all', 'lp-item');
+            setupCheckboxLogic('location-all', 'location-item');
+            setupCheckboxLogic('rake-all', 'rake-item');
+            
+            document.querySelectorAll('#rake-filter input[type="checkbox"]:not(#rake-all)')
+                    .forEach(cb => cb.classList.add('rake-item'));
+        }
+
+        // --- 9. AVERAGE LINE CALCULATE KARNA (Updated) ---
+        function calculateAverageSeries(filteredStops) {
+            if (filteredStops.length === 0) return null;
+            
+            // NAYA: 1000m add karo
+            const sums = { 1000: 0, 800: 0, 500: 0, 100: 0, 50: 0, 0: 0 };
+            const counts = { 1000: 0, 800: 0, 500: 0, 100: 0, 50: 0, 0: 0 };
+            
+            for (const stop of filteredStops) {
+                for (const point of stop.graphData) {
+                    const distance = point[0];
+                    const speed = point[1];
+                    if (sums.hasOwnProperty(distance) && speed !== null && speed !== undefined) { 
+                        sums[distance] += speed; 
+                        counts[distance]++; 
+                    }
+                }
+            }
+            
+            // NAYA: avgData 1000m se shuru hoga
+            const avgData = [
+                [1000, counts[1000] > 0 ? sums[1000] / counts[1000] : null],
+                [800, counts[800] > 0 ? sums[800] / counts[800] : null],
+                [500, counts[500] > 0 ? sums[500] / counts[500] : null],
+                [100, counts[100] > 0 ? sums[100] / counts[100] : null],
+                [50, counts[50] > 0 ? sums[50] / counts[50] : null],
+                [0, 0]
+            ];
+
+            return {
+                name: `Average Profile (${filteredStops.length} stops)`,
+                type: 'line', data: avgData, smooth: true, symbol: 'none',
+                color: '#c23531', 
+                lineStyle: { width: 4, type: 'dashed', color: '#c23531' },
+                emphasis: { lineStyle: { width: 6 } }
+            };
+        }
+
+        // --- 10. CHART UPDATE KARNA (Updated) ---
+        function updateChart() {
+            
+            function getCheckedValues(allCheckboxId, itemClassName) {
+                if (document.getElementById(allCheckboxId).checked) {
+                    return ['ALL']; 
+                }
+                let values = [];
+                document.querySelectorAll(`.${itemClassName}:checked`).forEach(cb => {
+                    values.push(cb.value);
+                });
+                return values;
+            }
+
+            // 1. Filter values lena
+            const selectedLps = getCheckedValues('lp-all', 'lp-item');
+            const selectedLocations = getCheckedValues('location-all', 'location-item');
+            const selectedRakes = getCheckedValues('rake-all', 'rake-item');
+            const allRakesChecked = document.getElementById('rake-all').checked;
+
+            // NAYA: Date values lena aur parse karna (Col A ke data ke liye)
+            const fromDateStr = document.getElementById('from-date').value; // 'YYYY-MM-DD'
+            const toDateStr = document.getElementById('to-date').value;
+
+            let fromDate = null;
+            if (fromDateStr) {
+                const parts = fromDateStr.split('-'); // [YYYY, MM, DD]
+                fromDate = new Date(parts[0], parts[1] - 1, parts[2]); // Y, M-1, D
+            }
+            let toDate = null;
+            if (toDateStr) {
+                const parts = toDateStr.split('-');
+                toDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                // To date ko din ke end tak set karo (taaki same day include ho)
+                toDate.setHours(23, 59, 59, 999); 
+            }
+
+            // 2. Data ko filter karna
+            const filteredData = processedData.filter(stop => {
+                const lpMatch = selectedLps.includes('ALL') || selectedLps.includes(stop.lpId);
+                const locationMatch = selectedLocations.includes('ALL') || selectedLocations.includes(stop.location);
+                
+                let rakeMatch = false;
+                if (allRakesChecked) {
+                    rakeMatch = true; 
+                } else {
+                    rakeMatch = selectedRakes.includes(stop.rakeType);
+                }
+                
+                // NAYA: Date match logic (Col A ke 'date' object par)
+                const dateMatch = (!fromDate || stop.date >= fromDate) && (!toDate || stop.date <= toDate);
+                
+                return lpMatch && locationMatch && rakeMatch && dateMatch; // NAYA: dateMatch add kiya
+            });
+
+            // Apply recent filter
+            const recentValue = document.getElementById('recent-filter').value;
+            let displayData = filteredData;
+            if (recentValue !== 'all') {
+                const N = parseInt(recentValue);
+                displayData = filteredData.slice(-N);
+            }
+
+            // 3. Graph ko dikhana aur resize karna
+            chartDiv.style.display = 'block';
+            myChart.resize(); 
+
+            // 4. "No Data" check
+            if (displayData.length === 0) {
+                myChart.setOption({
+                    ...chartBaseOption,
+                    title: { text: 'No matching data found', subtext: 'Please adjust your filter selection.', left: 'center', top: 'center' },
+                    legend: { data: [] },
+                    series: [] 
+                }, true);
+                return; 
+            }
+            
+            // 5. Average calculate karo
+            const avgSeries = calculateAverageSeries(displayData);
+            let finalSeries = [];
+            if (avgSeries) {
+                finalSeries.push(avgSeries); 
+            }
+
+            let subtext = null; 
+
+            // 6. Check karo ki lines LIMIT se zyaada toh nahi hain aur average only mode
+            if (showOnlyAverage) {
+                subtext = `Showing only average of ${displayData.length} stops.`;
+            } else if (displayData.length > LINE_LIMIT) {
+                subtext = `Showing average of ${displayData.length} stops. (Too many to show individually)`;
+            } else {
+                const seriesData = displayData.map((stop, index) => {
+                    return {
+                        // === YAHAN BADLAAV KIYA GAYA HAI ===
+                        name: `LP ${stop.lpId || 'N/A'} (${stop.name || 'N/A'}) (Tr ${stop.trainNo || 'N/A'} on ${stop.dateStr || 'N/A'}) @ ${stop.location} (KM ${stop.km})`,
+                        type: 'line', smooth: true, symbol: 'none', 
+                        lineStyle: { width: 2, opacity: 0.7 },
+                        data: stop.graphData,
+                        emphasis: { focus: 'series', lineStyle: { width: 4, opacity: 1 } },
+                        color: COLOR_PALETTE[index % COLOR_PALETTE.length]
+                    };
+                });
+                finalSeries.push(...seriesData);
+            }
+            
+            // 7. Chart ko naye data se update karo
+            myChart.setOption({
+                ...chartBaseOption,
+                title: { 
+                    text: 'Stop Approach Speed Analysis', 
+                    subtext: subtext, 
+                    left: 'auto', 
+                    top: 'auto' 
+                },
+                legend: { 
+                    ...chartBaseOption.legend,
+                    data: finalSeries.map(s => s.name)
+                },
+                series: finalSeries
+            }, true);
+        }
+
+    </script>
+</body>
+</html>
