@@ -730,163 +730,164 @@ document.getElementById('spmForm').addEventListener('submit', async (e) => {
 
                 console.log('Initial stops found:', stops.length);
 
-                const processedStops = stops.map((stop, stopIndex) => {
-                    let startTiming = null;
-                    let startTimeObject = null;
-                    let startEventFound = false;
+                // --- START: MODIFIED STOP PROCESSING WITH DURATION FILTER ---
 
-                    const stopDataIndex = stop.index;
-                    for (let i = stopDataIndex + 1; i < normalizedData.length; i++) {
-                        const currentSpeed = normalizedData[i].Speed;
-                        const currentTime = new Date(normalizedData[i].Time);
-                        const currentEvent = normalizedData[i].EventGn;
-                        
-                        // Train chalu hone ka logic: Speed 0 se zyada ho, YA event 'START' ho
-                        if ((currentSpeed > 0 || currentEvent === 'START') && currentTime > stop.time) {
-                            startTimeObject = currentTime;
-                            startTiming = currentTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-                            startEventFound = true;
-                            break;
-                        }
-                    }
-                    
-                    const duration = startTimeObject ? (startTimeObject.getTime() - stop.time.getTime()) / 1000 : 0;
-                    const isLastStopOfJourney = (stopIndex === stops.length - 1) && !startEventFound;
-                    
-                    return { ...stop, startTiming: startTiming || 'N/A', duration, isLastStopOfJourney };
-                });
+// 1. Process all potential stops to calculate their duration.
+const processedStops = stops.map((stop, stopIndex) => { 
+    let startTiming = null;
+    let startTimeObject = null;
+    let startEventFound = false;
 
-                stops = processedStops.filter(stop => stop.duration >= 10 || stop.isLastStopOfJourney);
+    const stopDataIndex = stop.index;
+    for (let i = stopDataIndex + 1; i < normalizedData.length; i++) {
+        const currentSpeed = normalizedData[i].Speed;
+        const currentTime = new Date(normalizedData[i].Time);
+        const currentEvent = normalizedData[i].EventGn;
+        
+        // Train chalu hone ka logic: Speed 0 se zyada ho, YA event 'START' ho
+        if ((currentSpeed > 0 || currentEvent === 'START') && currentTime > stop.time) {
+            startTimeObject = currentTime;
+            startTiming = currentTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            startEventFound = true;
+            break;
+        }
+    }
+    
+    const duration = startTimeObject ? (startTimeObject.getTime() - stop.time.getTime()) / 1000 : 0;
+    const isLastStopOfJourney = (stopIndex === stops.length - 1) && !startEventFound;
+    
+    return { ...stop, startTiming: startTiming || 'N/A', duration, isLastStopOfJourney };
+});
 
-                stops.forEach((stop, index) => {
-                    stop.group = index + 1;
-                });
+stops = processedStops.filter(stop => stop.duration >= 10 || stop.isLastStopOfJourney);
 
-                console.log('Final count of stops (duration >= 10s or last stop):', stops.length);
+stops.forEach((stop, index) => {
+    stop.group = index + 1;
+});
 
-                const finalStops = stops.map(stop => {
-                    const stopDistance = stop.kilometer; // meters
-                    let stopLocation = '';
+console.log('Final count of stops (duration >= 10s or last stop):', stops.length);
 
-                    const atStationOrSignal = window.stationSignalData.find(row => {
-                        if (row['SECTION'] !== section) return false;
-                        const signalDistance = parseFloat(row['CUMMULATIVE DISTANT(IN Meter)']) - fromDistance;
-                        const rangeStart = signalDistance - 400;
-                        const rangeEnd = signalDistance + 400;
-                        return stopDistance >= rangeStart && stopDistance <= rangeEnd;
-                    });
+const finalStops = stops.map(stop => {
+    const stopDistance = stop.kilometer; // meters
+    let stopLocation = '';
 
-                    if (atStationOrSignal) {
-                        stopLocation = `${atStationOrSignal['STATION']} ${atStationOrSignal['SIGNAL NAME'] || ''}`.trim();
-                    } else {
-                        let sectionStart = null, sectionEnd = null;
-                        for (let i = 0; i < normalizedStations.length - 1; i++) {
-                            const startStation = normalizedStations[i];
-                            const endStation = normalizedStations[i + 1];
-                            if (stopDistance >= startStation.distance && stopDistance < endStation.distance) {
-                                sectionStart = startStation.name;
-                                sectionEnd = endStation.name;
-                                break;
-                            }
-                        }
-                        stopLocation = sectionStart && sectionEnd ? `${sectionStart}-${sectionEnd}` : 'Unknown Section';
-                    }
+    const atStationOrSignal = window.stationSignalData.find(row => {
+        if (row['SECTION'] !== section) return false;
+        const signalDistance = parseFloat(row['CUMMULATIVE DISTANT(IN Meter)']) - fromDistance;
+        const rangeStart = signalDistance - 400;
+        const rangeEnd = signalDistance + 400;
+        return stopDistance >= rangeStart && stopDistance <= rangeEnd;
+    });
 
-                    const distancesBefore = [1000, 800, 500, 100, 50]; // meters
-                    const speedsBefore = distancesBefore.map(targetDistance => {
-                        let closestRow = null;
-                        let minDistanceDiff = Infinity;
-                        // Stop ke index se peeche ki taraf dhoondein
-                        for (let i = stop.index; i >= 0; i--) {
-                            const row = normalizedData[i];
-                            const distanceDiff = stop.kilometer - row.Distance; // meters
-                            
-                            // Check karein ki row stop se pehle hai
-                            if (distanceDiff >= 0) {
-                                // Check karein ki yeh target distance ke sabse kareeb hai
-                                const diffFromTarget = Math.abs(distanceDiff - targetDistance);
-                                if (diffFromTarget < minDistanceDiff) {
-                                    minDistanceDiff = diffFromTarget;
-                                    closestRow = row;
-                                }
-                            }
-                            
-                            // Agar target se bahut door nikal gaye toh loop tod dein
-                            if (distanceDiff > targetDistance + 2000) break;
-                        }
-                        return closestRow ? closestRow.Speed.toFixed(2) : 'N/A';
-                    });
-                    
-                    const parsedSpeeds = speedsBefore.map(speed => parseFloat(speed) || Infinity);
-                    const speed800m = parsedSpeeds[1];
-                    const speed500m = parsedSpeeds[2];
-                    const speed100m = parsedSpeeds[3];
-                    const speed50m  = parsedSpeeds[4];
+    if (atStationOrSignal) {
+        stopLocation = `${atStationOrSignal['STATION']} ${atStationOrSignal['SIGNAL NAME'] || ''}`.trim();
+    } else {
+        let sectionStart = null, sectionEnd = null;
+        for (let i = 0; i < normalizedStations.length - 1; i++) {
+            const startStation = normalizedStations[i];
+            const endStation = normalizedStations[i + 1];
+            if (stopDistance >= startStation.distance && stopDistance < endStation.distance) {
+                sectionStart = startStation.name;
+                sectionEnd = endStation.name;
+                break;
+            }
+        }
+        stopLocation = sectionStart && sectionEnd ? `${sectionStart}-${sectionEnd}` : 'Unknown Section';
+    }
 
-                    let isSmooth;
-                    if (rakeType === 'COACHING' || rakeType === 'MEMU') {
-                        isSmooth = speed800m <= 60 && speed500m <= 45 && speed100m <= 30 && speed50m <= 20;
-                    } else if (rakeType === 'GOODS') {
-                        isSmooth = speed800m <= 40 && speed500m <= 25 && speed100m <= 15 && speed50m <= 10;
-                    } else {
-                        isSmooth = speed800m <= 60 && speed500m <= 30 && speed100m <= 20 && speed50m <= 20;
-                    }
-                    const brakingTechnique = isSmooth ? 'Smooth' : 'Late';
+    // --- सुधरा हुआ 11-पॉइंट्स ब्रेकिंग और स्मूथ लॉजिक ---
+    const distancesBefore = [2000, 1000, 800, 600, 500, 400, 300, 100, 50, 20, 0];
+    const speedsBefore = distancesBefore.map(targetDistance => {
+        let closestRow = null;
+        let minDistanceDiff = Infinity;
+        for (let i = stop.index; i >= 0; i--) {
+            const row = normalizedData[i];
+            const distanceDiff = stop.kilometer - row.Distance;
+            if (distanceDiff >= targetDistance) {
+                const absDiff = Math.abs(distanceDiff - targetDistance);
+                if (absDiff < minDistanceDiff) {
+                    minDistanceDiff = absDiff;
+                    closestRow = row;
+                }
+            }
+        }
+        return closestRow ? Math.floor(closestRow.Speed).toString() : '0';
+    });
 
-                    return { ...stop, stopLocation, speedsBefore, brakingTechnique };
-                });
+    const parsedSpeeds = speedsBefore.map(speed => parseFloat(speed) || 0);
 
-                stops = finalStops;
-                console.log('Enhanced Stops:', stops);
+    const s2000 = parsedSpeeds[0]; // Index 0 = 2000m
+    const s1000 = parsedSpeeds[1]; // Index 1 = 1000m
+    const s500  = parsedSpeeds[4]; // Index 4 = 500m
+    const s100  = parsedSpeeds[7]; // Index 7 = 100m
+    const s50   = parsedSpeeds[8]; // Index 8 = 50m
 
-                const trackSpeedReduction = (data, startIdx, maxDurationMs) => {
-                    const startSpeed = data[startIdx].Speed;
-                    const startTime = data[startIdx].Time.getTime();
-                    let lowestSpeed = startSpeed;
-                    let lowestSpeedIdx = startIdx;
-                    let speedHitZero = false;
+    let isSmooth = false;
+    if (rakeType === 'GOODS') {
+        // नए नियम (Goods): 2000m(55), 1000m(40), 500m(25), 100m(15), 50m(10)
+        isSmooth = (s2000 <= 55 && s1000 <= 40 && s500 <= 25 && s100 <= 15 && s50 <= 10);
+    } else { 
+        // नए नियम (Coaching/MEMU): 2000m(100), 1000m(60), 500m(50), 100m(30), 50m(15)
+        isSmooth = (s2000 <= 100 && s1000 <= 60 && s500 <= 50 && s100 <= 30 && s50 <= 15);
+    }
+    const brakingTechnique = isSmooth ? 'Smooth' : 'Late';
+    // --- सुधार समाप्त ---
 
-                    let increaseStartTime = null;
-                    let speedAtIncreaseStart = 0;
+    return { ...stop, stopLocation, speedsBefore, brakingTechnique };
+});
 
-                    for (let i = startIdx + 1; i < data.length; i++) {
-                        const currentSpeed = data[i].Speed;
-                        const currentTime = data[i].Time.getTime();
+stops = finalStops;
+console.log('Enhanced Stops:', stops);
 
-                        if (currentTime - startTime > maxDurationMs) break;
-                        if (currentSpeed === 0) {
-                            speedHitZero = true;
-                            break;
-                        }
+const trackSpeedReduction = (data, startIdx, maxDurationMs) => {
+    const startSpeed = data[startIdx].Speed;
+    const startTime = data[startIdx].Time.getTime();
+    let lowestSpeed = startSpeed;
+    let lowestSpeedIdx = startIdx;
+    let speedHitZero = false;
 
-                        if (currentSpeed <= lowestSpeed) {
-                            lowestSpeed = currentSpeed;
-                            lowestSpeedIdx = i;
-                            increaseStartTime = null;
-                        } else {
-                            if (increaseStartTime === null) {
-                                increaseStartTime = currentTime;
-                                speedAtIncreaseStart = lowestSpeed;
-                            }
-                            const increaseDuration = currentTime - increaseStartTime;
-                            const increaseMagnitude = currentSpeed - speedAtIncreaseStart;
-                            if (increaseMagnitude > 2 || increaseDuration > 2000) {
-                                break;
-                            }
-                        }
-                    }
+    let increaseStartTime = null;
+    let speedAtIncreaseStart = 0;
 
-                    if (speedHitZero || lowestSpeedIdx === startIdx) {
-                        return null;
-                    }
+    for (let i = startIdx + 1; i < data.length; i++) {
+        const currentSpeed = data[i].Speed;
+        const currentTime = data[i].Time.getTime();
 
-                    const endTime = data[lowestSpeedIdx].Time.getTime();
-                    return {
-                        index: lowestSpeedIdx,
-                        speed: lowestSpeed,
-                        timeDiff: (endTime - startTime) / 1000
-                    };
-                };
+        if (currentTime - startTime > maxDurationMs) break;
+        if (currentSpeed === 0) {
+            speedHitZero = true;
+            break;
+        }
+
+        if (currentSpeed <= lowestSpeed) {
+            lowestSpeed = currentSpeed;
+            lowestSpeedIdx = i;
+            increaseStartTime = null;
+        } else {
+            if (increaseStartTime === null) {
+                increaseStartTime = currentTime;
+                speedAtIncreaseStart = lowestSpeed;
+            }
+            const increaseDuration = currentTime - increaseStartTime;
+            const increaseMagnitude = currentSpeed - speedAtIncreaseStart;
+
+            if (increaseMagnitude > 2 || increaseDuration > 2000) {
+                break;
+            }
+        }
+    }
+
+    if (speedHitZero || lowestSpeedIdx === startIdx) {
+        return null;
+    }
+
+    const endTime = data[lowestSpeedIdx].Time.getTime();
+    return {
+        index: lowestSpeedIdx,
+        speed: lowestSpeed,
+        timeDiff: (endTime - startTime) / 1000
+    };
+};
 
                 let bftDetails = null;
                 let bptDetails = null;
@@ -906,9 +907,9 @@ document.getElementById('spmForm').addEventListener('submit', async (e) => {
                                 if (speedReduction >= 5) {
                                     bftDetails = {
                                         time: row.Time.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }),
-                                        startSpeed: speed.toFixed(2),
-                                        endSpeed: result.speed.toFixed(2),
-                                        reduction: speedReduction.toFixed(2),
+                                        startSpeed: speed.toFixed(0),
+                                        endSpeed: result.speed.toFixed(0),
+                                        reduction: speedReduction.toFixed(0),
                                         timeTaken: result.timeDiff.toFixed(0),
                                         endTime: normalizedData[result.index].Time.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false })
                                     };
@@ -924,14 +925,14 @@ document.getElementById('spmForm').addEventListener('submit', async (e) => {
                             const result = trackSpeedReduction(normalizedData, i, brakeTestsConfig.bpt.maxDuration);
                             if (result && result.timeDiff > 1) {
                                 const speedReduction = speed - result.speed;
-                                const requiredReduction = speed * 0.40;
+                                const requiredReduction = Math.max(5, Math.round(speed * 0.40));
                                 
                                 if (speedReduction >= requiredReduction) {
                                     bptDetails = {
                                         time: row.Time.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }),
-                                        startSpeed: speed.toFixed(2),
-                                        endSpeed: result.speed.toFixed(2),
-                                        reduction: speedReduction.toFixed(2),
+                                        startSpeed: speed.toFixed(0),
+                                        endSpeed: result.speed.toFixed(0),
+                                        reduction: speedReduction.toFixed(0),
                                         timeTaken: result.timeDiff.toFixed(0),
                                         endTime: normalizedData[result.index].Time.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false })
                                     };
@@ -1013,7 +1014,7 @@ document.getElementById('spmForm').addEventListener('submit', async (e) => {
                 }
 
                 let stopChartImage = null;
-                const distanceLabels = [1000, 900, 800, 700, 600, 500, 400, 300, 200, 100, 50, 0];
+                const distanceLabels = [2000, 1000, 800, 600, 500, 400, 300, 100, 50, 20, 0];
                 const selectedStops = stops.length > 10 ? stops.slice(0, 10) : stops;
                 console.log('Total Stops:', stops.length, 'Selected Stops:', selectedStops.length);
 
