@@ -125,13 +125,20 @@ function findNearestPreviousRow(stopIndex, stopKm, data, targetMeters) {
  *  3) (Optional) Linear interpolation block is commented — enable if you prefer interpolated speeds.
  */
 function getSpeedAtDistanceBeforeStop(stopIndex, stopKm, data, targetMeters) {
-    // 1) Strict search - earliest row from back meeting >= targetMeters
+
+    // 🔴 FIX FOR 0m CASE
+    if (targetMeters === 0) {
+        return Number(data[stopIndex]?.Speed) || 0;
+    }
+
+    // 1) Strict search
     for (let i = stopIndex - 1; i >= 0; i--) {
         const distBefore = stopKm - data[i].Distance;
         if (distBefore >= targetMeters) {
             return Number(data[i].Speed) || 0;
         }
     }
+
 
     // 2) nearest previous row fallback
     const nearest = findNearestPreviousRow(stopIndex, stopKm, data, targetMeters);
