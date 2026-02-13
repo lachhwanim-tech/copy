@@ -793,7 +793,8 @@ const finalStops = stops.map(stop => {
         stopLocation = sectionStart && sectionEnd ? `${sectionStart}-${sectionEnd}` : 'Unknown Section';
     }
 
-    const distancesBefore = [1000, 800, 500, 100, 50];
+    // --- सुधरा हुआ 11-पॉइंट्स ब्रेकिंग और स्मूथ लॉजिक ---
+    const distancesBefore = [2000, 1000, 800, 600, 500, 400, 300, 100, 50, 20, 0];
     const speedsBefore = distancesBefore.map(targetDistance => {
         let closestRow = null;
         let minDistanceDiff = Infinity;
@@ -801,35 +802,35 @@ const finalStops = stops.map(stop => {
             const row = normalizedData[i];
             const distanceDiff = stop.kilometer - row.Distance;
             if (distanceDiff >= targetDistance) {
-                if (Math.abs(distanceDiff - targetDistance) < minDistanceDiff) {
-                    minDistanceDiff = Math.abs(distanceDiff - targetDistance);
+                const absDiff = Math.abs(distanceDiff - targetDistance);
+                if (absDiff < minDistanceDiff) {
+                    minDistanceDiff = absDiff;
                     closestRow = row;
                 }
             }
         }
-        return closestRow ? closestRow.Speed.toFixed(2) : 'N/A';
+        return closestRow ? Math.floor(closestRow.Speed).toString() : '0';
     });
-    
-    // Line 919 ko isse replace karein (Yeh Sahi hai)
 
-// Pehle sabhi speeds ko parse karein
-const parsedSpeeds = speedsBefore.map(speed => parseFloat(speed) || Infinity);
+    const parsedSpeeds = speedsBefore.map(speed => parseFloat(speed) || 0);
 
-// Ab, array se sahi values chunein (index ke hisaab se)
-// parsedSpeeds[0] hai 1000m speed (jo logic mein nahi chahiye)
-const speed800m = parsedSpeeds[1]; // 800m speed
-const speed500m = parsedSpeeds[2]; // 500m speed
-const speed100m = parsedSpeeds[3]; // 100m speed
-const speed50m  = parsedSpeeds[4]; // 50m speed
-    let isSmooth;
-    if (rakeType === 'COACHING' || rakeType === 'MEMU') {
-        isSmooth = speed800m <= 60 && speed500m <= 45 && speed100m <= 30 && speed50m <= 20;
-    } else if (rakeType === 'GOODS') {
-        isSmooth = speed800m <= 40 && speed500m <= 25 && speed100m <= 15 && speed50m <= 10;
-    } else {
-        isSmooth = speed800m <= 60 && speed500m <= 30 && speed100m <= 20 && speed50m <= 20;
+    // 11-पॉइंट एरे से सही इंडेक्स मैपिंग (SANKET_DB के लिए)
+    const s2000 = parsedSpeeds[0]; // Index 0 = 2000m
+    const s1000 = parsedSpeeds[1]; // Index 1 = 1000m
+    const s500  = parsedSpeeds[4]; // Index 4 = 500m
+    const s100  = parsedSpeeds[7]; // Index 7 = 100m
+    const s50   = parsedSpeeds[8]; // Index 8 = 50m
+
+    let isSmooth = false;
+    if (rakeType === 'GOODS') {
+        // नए नियम (Goods): 2000m(55), 1000m(40), 500m(25), 100m(15), 50m(10)
+        isSmooth = (s2000 <= 55 && s1000 <= 40 && s500 <= 25 && s100 <= 15 && s50 <= 10);
+    } else { 
+        // नए नियम (Coaching/MEMU): 2000m(100), 1000m(60), 500m(50), 100m(30), 50m(15)
+        isSmooth = (s2000 <= 100 && s1000 <= 60 && s500 <= 50 && s100 <= 30 && s50 <= 15);
     }
     const brakingTechnique = isSmooth ? 'Smooth' : 'Late';
+    // --- सुधार समाप्त ---
 
     return { ...stop, stopLocation, speedsBefore, brakingTechnique };
 });
@@ -925,9 +926,9 @@ console.log('Enhanced Stops:', stops);
                             if (speedReduction >= 5) {
                                 bftDetails = {
                                     time: row.Time.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }),
-                                    startSpeed: speed.toFixed(2),
-                                    endSpeed: result.speed.toFixed(2),
-                                    reduction: speedReduction.toFixed(2),
+                                    startSpeed: speed.toFixed(0),
+                                    endSpeed: result.speed.toFixed(0),
+                                    reduction: speedReduction.toFixed(0),
                                     timeTaken: result.timeDiff.toFixed(0),
                                     endTime: normalizedData[result.index].Time.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false })
                                 };
@@ -947,14 +948,14 @@ console.log('Enhanced Stops:', stops);
             const speedReduction = speed - result.speed;
             
             // Naya niyam: Speed kam se kam 40% ghatni chahiye
-            const requiredReduction = speed * 0.40; 
+            const requiredReduction = Math.max(5, Math.round(speed * 0.40)); 
             
             if (speedReduction >= requiredReduction) {
                 bptDetails = {
                     time: row.Time.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }),
-                    startSpeed: speed.toFixed(2),
-                    endSpeed: result.speed.toFixed(2),
-                    reduction: speedReduction.toFixed(2),
+                    startSpeed: speed.toFixed(0),
+                    endSpeed: result.speed.toFixed(0),
+                    reduction: speedReduction.toFixed(0),
                     timeTaken: result.timeDiff.toFixed(0),
                     // Yahaan bhi 'normalizedData' ka istemaal karein
                     endTime: normalizedData[result.index].Time.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false })
@@ -1068,7 +1069,7 @@ console.log('Enhanced Stops:', stops);
             }
 
             let stopChartImage = null;
-            const distanceLabels = [1000, 900, 800, 700, 600, 500, 400, 300, 200, 100, 0];
+            const distanceLabels = [2000, 1000, 800, 600, 500, 400, 300, 100, 50, 20, 0];
             const selectedStops = stops.length > 10 ? stops.slice(0, 10) : stops;
             console.log('Total Stops:', stops.length, 'Selected Stops:', selectedStops.length);
 
