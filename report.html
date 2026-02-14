@@ -936,11 +936,45 @@ async function generatePDF() { // <<< 1. Function ko ASYNC banaya gaya
 
         let y = margin;
         // --- PDF Header ---
+        const headerHeight = 40;
         doc.setFillColor(0, 51, 102);
-        doc.rect(0, 0, pageWidth, 25, 'F');
-        doc.setFontSize(18).setTextColor(255, 255, 255).setFont('helvetica', 'bold');
-        doc.text('CREW FOOTPLATE ACTIVITY MONITORING SYSTEM REPORT', pageWidth / 2, 15, { align: 'center' });
-        y += 30;
+        doc.rect(0, 0, pageWidth, headerHeight, 'F');
+
+        // बाईं तरफ रेलवे का लोगो जोड़ना (railway logo.png)
+        try {
+            const logoImg1 = document.querySelector('.logo');
+            if (logoImg1) {
+                doc.addImage(logoImg1, 'PNG', 10, 5, 30, 30);
+            }
+        } catch (e) {
+            console.error("Logo 1 Error:", e);
+        }
+
+        // दाईं तरफ ई-गरुड़ का लोगो जोड़ना (e gaurd.png)
+        try {
+            const logoImg2 = new Image();
+            logoImg2.src = 'e gaurd.png';
+            doc.addImage(logoImg2, 'PNG', pageWidth - 40, 5, 30, 30);
+        } catch (e) {
+            console.error("Logo 2 Error:", e);
+        }
+
+        // टेक्स्ट (बीच में)
+        doc.setTextColor(255, 255, 255);
+
+        // Main Title (हिंदी हटा दी गई है)
+        doc.setFontSize(18).setFont('helvetica', 'bold');
+        doc.text('E-GARUD', pageWidth / 2, 12, { align: 'center' });
+
+        // Subtitle 1
+        doc.setFontSize(12).setFont('helvetica', 'normal');
+        doc.text('(CREW FOOTPLATE ACTIVITY MONITORING SYSTEM)', pageWidth / 2, 20, { align: 'center' });
+
+        // Subtitle 2
+        doc.setFontSize(9);
+        doc.text('(TELOC CELL, ELECTRICAL(OP), RAIPUR, SOUTH EAST CENTRAL RAILWAY)', pageWidth / 2, 28, { align: 'center' });
+
+        y = headerHeight + 10;
 
         // --- Train Details ---
         doc.setFontSize(12).setTextColor(0, 0, 0).setFont('helvetica', 'bold');
